@@ -10,7 +10,7 @@ import type MultistateCheckboxesPlugin from "./main";
 
 class MultistateCheckboxesSettingTab extends PluginSettingTab {
     plugin: MultistateCheckboxesPlugin;
-    private previewEl!: HTMLElement;
+    private statesEl!: HTMLElement;
     private cycleText!: TextComponent;
 
     constructor(
@@ -34,12 +34,12 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
         });
 
         containerEl.createEl("p", {
-            text: 'Character order for the "Cycle checkbox state" command.',
+            text: "Drag items to reorder. Disabled states appear at the bottom.",
             cls: "setting-item-description",
         });
 
         new Setting(containerEl)
-            .setName("Cycle order")
+            .setName("Cycle order string")
             .setDesc("Task character string, e.g. \" />!*\"")
             .addText((text) => {
                 this.cycleText = text;
@@ -48,7 +48,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
                 text.onChange(async (value) => {
                     this.plugin.settings.cycleOrder = value;
                     await this.plugin.saveSettings();
-                    this.renderCyclePreview();
+                    this.renderStates();
                 });
             })
             .addExtraButton((btn) => {
@@ -61,45 +61,147 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
                     });
             });
 
-        containerEl.createEl("p", {
-            text: "Drag items to reorder.",
-            cls: "setting-item-description",
-        });
+        this.statesEl = containerEl.createEl("div");
+        this.renderStates();
+    }
 
-        this.previewEl = containerEl.createEl("div", {
-            cls: "multistate-cycle-preview",
-        });
-        this.renderCyclePreview();
+    /** Рендерит стейты в порядке cycleOrder с drag-and-drop. */
+    private renderStates(): void {
+        const container = this.statesEl;
+        container.empty();
+        container.style.display = "flex";
+        container.style.flexDirection = "column";
+        container.style.gap = "0";
 
-        containerEl.createEl("h2", {
-            text: "States",
-        });
+        // Получаем порядок: включённые по cycleOrder, затем выключенные
+        const order = this.plugin.settings.cycleOrder || DEFAULT_CYCLE_ORDER;
+        const items: CheckboxState[] = [];
+        const seen = new Set<string>();
 
-        for (const state of ALL_STATES) {
+        for (const ch of order) {
+            if (!seen.has(ch)) {
+                seen.add(ch);
+                const state = STATE_MAP[ch];
+                if (state) items.push(state);
+            }
+        }
+        for (const s of ALL_STATES) {
+            if (!seen.has(s.task)) {
+                items.push(s);
+            }
+        }
+
+        for (let i = 0; i < items.length; i++) {
+            const state = items[i];
             const ss = this.plugin.settings.states[state.task];
+            const enabled = ss.enabled;
 
-            const div = containerEl.createEl("div", {
+            const div = container.createEl("div", {
                 cls: "multistate-state-container",
             });
+            div.draggable = true;
+            div.dataset.task = state.task;
+            div.style.display = "flex";
+            div.style.alignItems = "center";
+            div.style.padding = "4px 8px";
+            div.style.borderRadius = "6px";
+            div.style.cursor = "grab";
+            div.style.userSelect = "none";
+            div.style.border = "1px solid var(--background-modifier-border)";
+            div.style.background = "var(--background-modifier-form-field)";
+            div.style.transition = "none";
+            div.style.opacity = enabled ? "1" : "0.5";
 
-            const headerDiv = div.createEl("div", {
-                cls: "multistate-state-header",
-            });
+            // Drag handle
+            const handle = document.createElement("span");
+            handle.textContent = "⋮⋮";
+            handle.style.marginRight = "8px";
+            handle.style.color = "var(--text-muted)";
+            handle.style.fontSize = "14px";
+            handle.style.cursor = "grab";
+            div.appendChild(handle);
 
+            // Icon + label
             const nameFrag = this.createIconPreview(state);
             nameFrag.appendChild(document.createTextNode(` [${state.task}]`));
-            new Setting(headerDiv)
-                .setName(nameFrag)
-                .addToggle((toggle) => {
-                    toggle.setValue(ss.enabled);
-                    toggle.onChange(async (value) => {
-                        ss.enabled = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.refreshCSS();
-                        this.renderCyclePreview();
-                    });
-                });
+            const labelEl = document.createElement("span");
+            labelEl.style.flexGrow = "1";
+            labelEl.appendChild(nameFrag);
+            div.appendChild(labelEl);
+
+            // Toggle
+            const toggleEl = document.createElement("input");
+            toggleEl.type = "checkbox";
+            toggleEl.checked = enabled;
+            toggleEl.classList.add("checkbox-container");
+            toggleEl.addEventListener("change", async () => {
+                ss.enabled = toggleEl.checked;
+                await this.plugin.saveSettings();
+                this.plugin.refreshCSS();
+                this.renderStates();
+            });
+            div.appendChild(toggleEl);
+
+            // Drag events
+            this.setupStateDragHandlers(div, container);
         }
+    }
+
+    private setupStateDragHandlers(
+        itemEl: HTMLElement,
+        container: HTMLElement,
+    ): void {
+        const BORDER = "1px solid var(--background-modifier-border)";
+        const DASHED = "1px dashed var(--interactive-accent)";
+
+        itemEl.addEventListener("dragstart", (e) => {
+            (e.target as HTMLElement).style.opacity = "0.4";
+            e.dataTransfer!.effectAllowed = "move";
+        });
+        itemEl.addEventListener("dragend", (e) => {
+            (e.target as HTMLElement).style.opacity = "1";
+            container.querySelectorAll(".multistate-state-container").forEach((el) => {
+                (el as HTMLElement).style.border = BORDER;
+            });
+        });
+        itemEl.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer!.dropEffect = "move";
+        });
+        itemEl.addEventListener("dragenter", (e) => {
+            e.preventDefault();
+            itemEl.style.border = DASHED;
+        });
+        itemEl.addEventListener("dragleave", () => {
+            itemEl.style.border = BORDER;
+        });
+        itemEl.addEventListener("drop", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            itemEl.style.border = BORDER;
+
+            const dragged = container.querySelector(
+                ".multistate-state-container[style*=\"opacity: 0.4\"]",
+            ) as HTMLElement | null;
+            if (!dragged || dragged === itemEl) return;
+
+            const rect = itemEl.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            if (e.clientY < midY) {
+                container.insertBefore(dragged, itemEl);
+            } else {
+                container.insertBefore(dragged, itemEl.nextSibling);
+            }
+
+            // Обновляем cycleOrder из DOM-порядка
+            const tasks: string[] = [];
+            container.querySelectorAll(".multistate-state-container").forEach((el) => {
+                tasks.push((el as HTMLElement).dataset.task!);
+            });
+            this.plugin.settings.cycleOrder = tasks.join("");
+            this.plugin.saveSettings();
+            this.cycleText.setValue(this.plugin.settings.cycleOrder);
+        });
     }
 
     private createIconPreview(state: CheckboxState): DocumentFragment {
@@ -137,131 +239,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 
         frag.appendChild(span);
         return frag;
-    }
-
-    private renderCyclePreview(): void {
-        const container = this.previewEl;
-        container.empty();
-        container.style.display = "flex";
-        container.style.alignItems = "center";
-        container.style.flexWrap = "wrap";
-        container.style.gap = "4px";
-        container.style.marginTop = "8px";
-
-        const order = this.plugin.settings.cycleOrder || DEFAULT_CYCLE_ORDER;
-        const enabled = new Set(
-            ALL_STATES.filter((s) => this.plugin.settings.states[s.task]?.enabled).map((s) => s.task),
-        );
-
-        const seen = new Set<string>();
-        const items: CheckboxState[] = [];
-        for (const ch of order) {
-            if (enabled.has(ch) && !seen.has(ch)) {
-                seen.add(ch);
-                const state = STATE_MAP[ch];
-                if (state) items.push(state);
-            }
-        }
-        for (const s of ALL_STATES) {
-            if (enabled.has(s.task) && !seen.has(s.task)) {
-                items.push(s);
-            }
-        }
-
-        if (items.length === 0) {
-            container.createEl("span", {
-                text: "No enabled states",
-                cls: "setting-item-description",
-            });
-            return;
-        }
-
-        for (let i = 0; i < items.length; i++) {
-            const state = items[i];
-
-            const itemEl = container.createEl("span", {
-                cls: "multistate-cycle-item",
-            });
-            itemEl.draggable = true;
-            itemEl.dataset.task = state.task;
-            itemEl.style.display = "inline-flex";
-            itemEl.style.alignItems = "center";
-            itemEl.style.padding = "4px 8px";
-            itemEl.style.borderRadius = "6px";
-            itemEl.style.cursor = "grab";
-            itemEl.style.userSelect = "none";
-            itemEl.style.border = "1px solid var(--background-modifier-border)";
-            itemEl.style.background = "var(--background-modifier-form-field)";
-            itemEl.style.transition = "none";
-
-            const handle = document.createElement("span");
-            handle.textContent = "\u22EE\u22EE";
-            handle.style.marginRight = "4px";
-            handle.style.color = "var(--text-muted)";
-            handle.style.fontSize = "14px";
-            handle.style.cursor = "grab";
-            itemEl.appendChild(handle);
-
-            const iconPreview = this.createIconPreview(state);
-            itemEl.appendChild(iconPreview);
-
-            itemEl.appendChild(document.createTextNode(`[${state.task}]`));
-
-            this.setupDragHandlers(itemEl, container);
-        }
-    }
-
-    private setupDragHandlers(itemEl: HTMLElement, container: HTMLElement): void {
-        const BORDER = "1px solid var(--background-modifier-border)";
-        const DASHED = "1px dashed var(--interactive-accent)";
-
-        itemEl.addEventListener("dragstart", (e) => {
-            (e.target as HTMLElement).style.opacity = "0.4";
-            e.dataTransfer!.effectAllowed = "move";
-        });
-        itemEl.addEventListener("dragend", (e) => {
-            (e.target as HTMLElement).style.opacity = "1";
-            container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
-                (el as HTMLElement).style.border = BORDER;
-            });
-        });
-        itemEl.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            e.dataTransfer!.dropEffect = "move";
-        });
-        itemEl.addEventListener("dragenter", (e) => {
-            e.preventDefault();
-            itemEl.style.border = DASHED;
-        });
-        itemEl.addEventListener("dragleave", () => {
-            itemEl.style.border = BORDER;
-        });
-        itemEl.addEventListener("drop", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            itemEl.style.border = BORDER;
-
-            const dragged = container.querySelector(
-                ".multistate-cycle-item[style*=\"opacity: 0.4\"]",
-            ) as HTMLElement | null;
-            if (!dragged || dragged === itemEl) return;
-
-            const rect = itemEl.getBoundingClientRect();
-            const midX = rect.left + rect.width / 2;
-            if (e.clientX < midX) {
-                container.insertBefore(dragged, itemEl);
-            } else {
-                container.insertBefore(dragged, itemEl.nextSibling);
-            }
-
-            const tasks: string[] = [];
-            container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
-                tasks.push((el as HTMLElement).dataset.task!);
-            });
-            this.plugin.settings.cycleOrder = tasks.join("");
-            this.plugin.saveSettings();
-            this.cycleText.setValue(this.plugin.settings.cycleOrder);
-        });
     }
 }
 
