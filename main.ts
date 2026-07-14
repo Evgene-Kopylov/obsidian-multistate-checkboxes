@@ -489,6 +489,7 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 		this.addCommand({
 			id: "cycle-checkbox-state",
 			name: "Циклически переключить состояние чекбокса",
+			hotkeys: [{ modifiers: ["Alt"], key: "q" }],
 			editorCheckCallback: (
 				checking: boolean,
 				editor: Editor,
