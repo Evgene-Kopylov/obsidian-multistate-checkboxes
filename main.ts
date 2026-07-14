@@ -304,17 +304,16 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 		(s) => s.iconType === "background" && s.task !== "x",
 	);
 
-	// Разделяем mask-стейты на те, у кого есть extraCSS и без
-	const maskSimple = maskTasks.filter((s) => !s.extraCSS);
-	const maskExtra = maskTasks.filter((s) => s.extraCSS);
+	// Хелпер: генерирует селекторы для data-task
+	const taskSelectors = (task: string): string[] => [
+		`input[data-task="${task}"]:checked`,
+		`li[data-task="${task}"] > input:checked`,
+		`li[data-task="${task}"] > p > input:checked`,
+	];
 
 	// ── Базовые свойства для mask-иконок ──
 	if (maskTasks.length > 0) {
-		const selectors = maskTasks.flatMap((s) => [
-			`input[data-task="${s.task}"]:checked`,
-			`li[data-task="${s.task}"] > input:checked`,
-			`li[data-task="${s.task}"] > p > input:checked`,
-		]);
+		const selectors = maskTasks.flatMap((s) => taskSelectors(s.task));
 		css += `${selectors.join(",\n")} {\n`;
 		css += `\t--checkbox-marker-color: transparent !important;\n`;
 		css += `\tborder: none !important;\n`;
@@ -327,54 +326,27 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 		css += `}\n\n`;
 	}
 
-	// ── Индивидуальные mask-иконки без extraCSS ──
-	for (const s of maskSimple) {
+	// ── Индивидуальные mask-иконки ──
+	for (const s of maskTasks) {
 		const color = s.defaultColor || "var(--text-faint)";
-		const svg = s.svg;
-		const selectors = [
-			`input[data-task="${s.task}"]:checked`,
-			`li[data-task="${s.task}"] > input:checked`,
-			`li[data-task="${s.task}"] > p > input:checked`,
-		];
-		css += `${selectors.join(",\n")} {\n`;
+		css += `${taskSelectors(s.task).join(",\n")} {\n`;
 		css += `\tcolor: ${color} !important;\n`;
-		css += `\t-webkit-mask-image: url("${svg}") !important;\n`;
-		css += `}\n\n`;
-	}
-
-	// ── Индивидуальные mask-иконки с extraCSS ──
-	for (const s of maskExtra) {
-		const color = s.defaultColor || "var(--text-faint)";
-		const svg = s.svg;
-		const selectors = [
-			`input[data-task="${s.task}"]:checked`,
-			`li[data-task="${s.task}"] > input:checked`,
-			`li[data-task="${s.task}"] > p > input:checked`,
-		];
-		css += `${selectors.join(",\n")} {\n`;
-		css += `\tcolor: ${color} !important;\n`;
-		css += `\t-webkit-mask-image: url("${svg}") !important;\n`;
-		css += `\t${s.extraCSS}\n`;
+		css += `\t-webkit-mask-image: url("${s.svg}") !important;\n`;
+		if (s.extraCSS) css += `\t${s.extraCSS}\n`;
 		css += `}\n\n`;
 	}
 
 	// ── Background-иконки ──
 	for (const s of bgTasks) {
 		const bgColor = s.defaultColor || "#e5b567";
-		const svg = s.svg;
-		const selectors = [
-			`input[data-task="${s.task}"]:checked`,
-			`li[data-task="${s.task}"] > input:checked`,
-			`li[data-task="${s.task}"] > p > input:checked`,
-		];
-		css += `${selectors.join(",\n")} {\n`;
+		css += `${taskSelectors(s.task).join(",\n")} {\n`;
 		css += `\t--checkbox-marker-color: transparent !important;\n`;
 		css += `\tbackground-color: ${bgColor} !important;\n`;
 		css += `\tborder-color: ${bgColor} !important;\n`;
 		css += `\tbackground-position: 50% 50% !important;\n`;
 		css += `\tbackground-size: contain !important;\n`;
 		css += `\tbackground-repeat: no-repeat !important;\n`;
-		css += `\tbackground-image: url('${svg}') !important;\n`;
+		css += `\tbackground-image: url('${s.svg}') !important;\n`;
 		css += `}\n\n`;
 	}
 
@@ -884,56 +856,60 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			itemEl.appendChild(document.createTextNode(`[${state.task}]`));
 
 			// Drag events
-			itemEl.addEventListener("dragstart", (e) => {
-				(e.target as HTMLElement).style.opacity = "0.4";
-				e.dataTransfer!.effectAllowed = "move";
-			});
-			itemEl.addEventListener("dragend", (e) => {
-				(e.target as HTMLElement).style.opacity = "1";
-				container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
-					(el as HTMLElement).style.border =
-						"1px solid var(--background-modifier-border)";
-				});
-			});
-			itemEl.addEventListener("dragover", (e) => {
-				e.preventDefault();
-				e.dataTransfer!.dropEffect = "move";
-			});
-			itemEl.addEventListener("dragenter", (e) => {
-				e.preventDefault();
-				itemEl.style.border = "1px dashed var(--interactive-accent)";
-			});
-			itemEl.addEventListener("dragleave", () => {
-				itemEl.style.border = "1px solid var(--background-modifier-border)";
-			});
-			itemEl.addEventListener("drop", (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				itemEl.style.border = "1px solid var(--background-modifier-border)";
-
-				const dragged = container.querySelector(
-					".multistate-cycle-item[style*=\"opacity: 0.4\"]",
-				) as HTMLElement | null;
-				if (!dragged || dragged === itemEl) return;
-
-				// Определяем, вставить до или после цели
-				const rect = itemEl.getBoundingClientRect();
-				const midX = rect.left + rect.width / 2;
-				if (e.clientX < midX) {
-					container.insertBefore(dragged, itemEl);
-				} else {
-					container.insertBefore(dragged, itemEl.nextSibling);
-				}
-
-				// Обновляем cycleOrder из DOM-порядка
-				const tasks: string[] = [];
-				container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
-					tasks.push((el as HTMLElement).dataset.task!);
-				});
-				self.plugin.settings.cycleOrder = tasks.join("");
-				self.plugin.saveSettings();
-				self.cycleText.setValue(self.plugin.settings.cycleOrder);
-			});
+			this.setupDragHandlers(itemEl, container);
 		}
+	}
+
+	private setupDragHandlers(itemEl: HTMLElement, container: HTMLElement): void {
+		const BORDER = "1px solid var(--background-modifier-border)";
+		const DASHED = "1px dashed var(--interactive-accent)";
+
+		itemEl.addEventListener("dragstart", (e) => {
+			(e.target as HTMLElement).style.opacity = "0.4";
+			e.dataTransfer!.effectAllowed = "move";
+		});
+		itemEl.addEventListener("dragend", (e) => {
+			(e.target as HTMLElement).style.opacity = "1";
+			container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
+				(el as HTMLElement).style.border = BORDER;
+			});
+		});
+		itemEl.addEventListener("dragover", (e) => {
+			e.preventDefault();
+			e.dataTransfer!.dropEffect = "move";
+		});
+		itemEl.addEventListener("dragenter", (e) => {
+			e.preventDefault();
+			itemEl.style.border = DASHED;
+		});
+		itemEl.addEventListener("dragleave", () => {
+			itemEl.style.border = BORDER;
+		});
+		itemEl.addEventListener("drop", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			itemEl.style.border = BORDER;
+
+			const dragged = container.querySelector(
+				".multistate-cycle-item[style*=\"opacity: 0.4\"]",
+			) as HTMLElement | null;
+			if (!dragged || dragged === itemEl) return;
+
+			const rect = itemEl.getBoundingClientRect();
+			const midX = rect.left + rect.width / 2;
+			if (e.clientX < midX) {
+				container.insertBefore(dragged, itemEl);
+			} else {
+				container.insertBefore(dragged, itemEl.nextSibling);
+			}
+
+			const tasks: string[] = [];
+			container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
+				tasks.push((el as HTMLElement).dataset.task!);
+			});
+			this.plugin.settings.cycleOrder = tasks.join("");
+			this.plugin.saveSettings();
+			this.cycleText.setValue(this.plugin.settings.cycleOrder);
+		});
 	}
 }
