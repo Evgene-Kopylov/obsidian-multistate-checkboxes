@@ -97,7 +97,7 @@ npm run build      # production build
 ```sh
 # Install the plugin in a vault
 # Symlink the current folder (with the build output) into the vault's plugins
-ln -s "$PWD" "/home/death/Documents/TEST VAULT 2/.obsidian/plugins/multistate-checkboxes"
+ln -s "$PWD" "/home/death/obsidian-vault/.obsidian/plugins/multistate-checkboxes"
 ```
 
 ## License
