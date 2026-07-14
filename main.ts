@@ -816,7 +816,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 		container.style.display = "flex";
 		container.style.alignItems = "center";
 		container.style.flexWrap = "wrap";
-		container.style.gap = "0";
+		container.style.gap = "4px";
 		container.style.marginTop = "8px";
 
 		const order = this.plugin.settings.cycleOrder || DEFAULT_CYCLE_ORDER;
@@ -859,10 +859,12 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			itemEl.draggable = true;
 			itemEl.style.display = "inline-flex";
 			itemEl.style.alignItems = "center";
-			itemEl.style.padding = "2px 4px";
-			itemEl.style.borderRadius = "4px";
+			itemEl.style.padding = "4px 8px";
+			itemEl.style.borderRadius = "6px";
 			itemEl.style.cursor = "grab";
 			itemEl.style.userSelect = "none";
+			itemEl.style.border = "1px solid var(--background-modifier-border)";
+			itemEl.style.background = "var(--background-modifier-form-field)";
 
 			// Иконка
 			const iconPreview = self.createIconPreview(state);
