@@ -119,7 +119,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 
             		// Drag handle (по центру между лейблом и тогглом)
             		const handle = document.createElement("span");
-            		handle.textContent = "⋮⋮";
+		handle.textContent = "⋮⋮⋮⋮";
             		handle.style.flex = "1";
             		handle.style.display = "flex";
             		handle.style.justifyContent = "center";
