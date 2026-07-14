@@ -4,6 +4,7 @@ import {
 	Setting,
 	Editor,
 	MarkdownView,
+	TextComponent,
 } from "obsidian";
 
 // ─── Типы ───────────────────────────────────────────────────────────────────
@@ -671,6 +672,8 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 
 class MultistateCheckboxesSettingTab extends PluginSettingTab {
 	plugin: MultistateCheckboxesPlugin;
+	private previewEl!: HTMLElement;
+	private cycleText!: TextComponent;
 
 	constructor(
 		app: import("obsidian").App,
@@ -702,12 +705,13 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			.setName("Порядок цикла")
 			.setDesc("Строка из task-символов, напр. \" />!*\"")
 			.addText((text) => {
+				this.cycleText = text;
 				text.setValue(this.plugin.settings.cycleOrder);
 				text.setPlaceholder(DEFAULT_CYCLE_ORDER);
 				text.onChange(async (value) => {
 					this.plugin.settings.cycleOrder = value;
 					await this.plugin.saveSettings();
-					this.renderCyclePreview(previewEl);
+					this.renderCyclePreview();
 				});
 			})
 			.addExtraButton((btn) => {
@@ -720,10 +724,10 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 					});
 			});
 
-		const previewEl = containerEl.createEl("div", {
+		this.previewEl = containerEl.createEl("div", {
 			cls: "multistate-cycle-preview",
 		});
-		this.renderCyclePreview(previewEl);
+		this.renderCyclePreview();
 
 		containerEl.createEl("h2", {
 			text: "Состояния",
@@ -752,7 +756,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 						ss.enabled = value;
 						await this.plugin.saveSettings();
 						this.plugin.refreshCSS();
-						this.renderCyclePreview(previewEl);
+						this.renderCyclePreview();
 					});
 				});
 		}
@@ -799,9 +803,10 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 	}
 
 	/**
-	 * Рисует визуальный ряд порядка цикла: иконки со стрелками.
+	 * Рисует визуальный ряд порядка цикла с drag-and-drop.
 	 */
-	private renderCyclePreview(container: HTMLElement): void {
+	private renderCyclePreview(): void {
+		const container = this.previewEl;
 		container.empty();
 		container.style.display = "flex";
 		container.style.alignItems = "center";
@@ -814,7 +819,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			ALL_STATES.filter((s) => this.plugin.settings.states[s.task]?.enabled).map((s) => s.task),
 		);
 
-		// Фильтруем порядок: только включённые стейты, без дубликатов
 		const seen = new Set<string>();
 		const items: CheckboxState[] = [];
 		for (const ch of order) {
@@ -824,8 +828,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 				if (state) items.push(state);
 			}
 		}
-
-		// Добавляем включённые стейты, не упомянутые в порядке
 		for (const s of ALL_STATES) {
 			if (enabled.has(s.task) && !seen.has(s.task)) {
 				items.push(s);
@@ -840,21 +842,75 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			return;
 		}
 
+		const self = this;
+		let dragIdx = -1;
+
 		for (let i = 0; i < items.length; i++) {
 			const state = items[i];
 
-			// Иконка
-			const iconEl = container.createEl("span", {
-				cls: "multistate-cycle-icon",
+			const itemEl = container.createEl("span", {
+				cls: "multistate-cycle-item",
 			});
-			const iconPreview = this.createIconPreview(state);
-			iconEl.appendChild(iconPreview);
-			iconEl.style.display = "inline-flex";
-			iconEl.style.alignItems = "center";
-			iconEl.style.padding = "4px";
+			itemEl.draggable = true;
+			itemEl.style.display = "inline-flex";
+			itemEl.style.alignItems = "center";
+			itemEl.style.padding = "2px 4px";
+			itemEl.style.borderRadius = "4px";
+			itemEl.style.cursor = "grab";
+			itemEl.style.userSelect = "none";
+
+			// Иконка
+			const iconPreview = self.createIconPreview(state);
+			itemEl.appendChild(iconPreview);
+
+			// Drag handle (точки)
+			const handle = document.createElement("span");
+			handle.textContent = "⋮⋮";
+			handle.style.margin = "0 4px";
+			handle.style.color = "var(--text-muted)";
+			handle.style.fontSize = "14px";
+			handle.style.cursor = "grab";
+			itemEl.appendChild(handle);
 
 			// Текстовая метка
-			iconEl.appendChild(document.createTextNode(`[${state.task}]`));
+			itemEl.appendChild(document.createTextNode(`[${state.task}]`));
+
+			// Drag events
+			itemEl.addEventListener("dragstart", (e) => {
+				dragIdx = i;
+				itemEl.style.opacity = "0.4";
+				e.dataTransfer!.effectAllowed = "move";
+			});
+			itemEl.addEventListener("dragend", () => {
+				itemEl.style.opacity = "1";
+				// Убираем подсветку со всех
+				container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
+					(el as HTMLElement).style.border = "";
+				});
+			});
+			itemEl.addEventListener("dragover", (e) => {
+				e.preventDefault();
+				e.dataTransfer!.dropEffect = "move";
+				itemEl.style.border = "1px dashed var(--interactive-accent)";
+			});
+			itemEl.addEventListener("dragleave", () => {
+				itemEl.style.border = "";
+			});
+			itemEl.addEventListener("drop", (e) => {
+				e.preventDefault();
+				itemEl.style.border = "";
+				if (dragIdx < 0 || dragIdx === i) return;
+
+				// Перемещаем элемент в массиве
+				const moved = items.splice(dragIdx, 1)[0];
+				items.splice(i, 0, moved);
+
+				// Обновляем cycleOrder
+				self.plugin.settings.cycleOrder = items.map((s) => s.task).join("");
+				self.plugin.saveSettings();
+				self.cycleText.setValue(self.plugin.settings.cycleOrder);
+				self.renderCyclePreview();
+			});
 
 			// Стрелка (кроме последнего)
 			if (i < items.length - 1) {
@@ -862,7 +918,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 					text: "→",
 					cls: "multistate-cycle-arrow",
 				});
-				arrow.style.margin = "0 4px";
+				arrow.style.margin = "0 2px";
 				arrow.style.color = "var(--text-muted)";
 			}
 		}
