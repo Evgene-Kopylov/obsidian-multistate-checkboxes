@@ -685,12 +685,42 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl("h2", {
-			text: "Multistate Checkboxes — состояния",
+			text: "Multistate Checkboxes",
+		});
+
+		// ── Порядок цикла ──
+		containerEl.createEl("h2", {
+			text: "Циклическое переключение",
 		});
 
 		containerEl.createEl("p", {
-			text: "Включите нужные состояния чекбоксов. Можно переопределить цвет и SVG-иконку для каждого.",
+			text: 'Порядок символов для команды "Циклически переключить состояние чекбокса".',
 			cls: "setting-item-description",
+		});
+
+		new Setting(containerEl)
+			.setName("Порядок цикла")
+			.setDesc("Строка из task-символов, напр. \" />!*\"")
+			.addText((text) => {
+				text.setValue(this.plugin.settings.cycleOrder);
+				text.setPlaceholder(DEFAULT_CYCLE_ORDER);
+				text.onChange(async (value) => {
+					this.plugin.settings.cycleOrder = value;
+					await this.plugin.saveSettings();
+				});
+			})
+			.addExtraButton((btn) => {
+				btn.setIcon("reset")
+					.setTooltip("Сбросить порядок по умолчанию")
+					.onClick(async () => {
+						this.plugin.settings.cycleOrder = DEFAULT_CYCLE_ORDER;
+						await this.plugin.saveSettings();
+						this.display();
+					});
+			});
+
+		containerEl.createEl("h2", {
+			text: "Состояния",
 		});
 
 		for (const state of ALL_STATES) {
@@ -718,38 +748,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 						this.plugin.refreshCSS();
 					});
 				});
-			}
-
-		// ── Порядок цикла ──
-		containerEl.createEl("h2", {
-			text: "Циклическое переключение",
-		});
-
-		containerEl.createEl("p", {
-			text: 'Порядок символов для команды "Циклически переключить состояние чекбокса". Перетаскивайте или введите строку символов.',
-			cls: "setting-item-description",
-		});
-
-		new Setting(containerEl)
-			.setName("Порядок цикла")
-			.setDesc("Строка из task-символов, напр. \" />!*\"")
-			.addText((text) => {
-				text.setValue(this.plugin.settings.cycleOrder);
-				text.setPlaceholder(DEFAULT_CYCLE_ORDER);
-				text.onChange(async (value) => {
-					this.plugin.settings.cycleOrder = value;
-					await this.plugin.saveSettings();
-				});
-			})
-			.addExtraButton((btn) => {
-				btn.setIcon("reset")
-					.setTooltip("Сбросить порядок по умолчанию")
-					.onClick(async () => {
-						this.plugin.settings.cycleOrder = DEFAULT_CYCLE_ORDER;
-						await this.plugin.saveSettings();
-						this.display();
-					});
-			});
+		}
 	}
 
 	/**
