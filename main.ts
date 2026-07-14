@@ -911,16 +911,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 				self.cycleText.setValue(self.plugin.settings.cycleOrder);
 				self.renderCyclePreview();
 			});
-
-			// Стрелка (кроме последнего)
-			if (i < items.length - 1) {
-				const arrow = container.createEl("span", {
-					text: "→",
-					cls: "multistate-cycle-arrow",
-				});
-				arrow.style.margin = "0 2px";
-				arrow.style.color = "var(--text-muted)";
-			}
 		}
 	}
 }
