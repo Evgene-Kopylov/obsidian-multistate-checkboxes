@@ -752,6 +752,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 						ss.enabled = value;
 						await this.plugin.saveSettings();
 						this.plugin.refreshCSS();
+						this.renderCyclePreview(previewEl);
 					});
 				});
 		}
