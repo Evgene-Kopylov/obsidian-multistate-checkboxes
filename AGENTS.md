@@ -26,9 +26,13 @@ npm run build
 
 ```
 obsidian-multistate-checkboxes/
-├── main.ts              # точка входа, registerPlugin
+├── main.ts              # точка входа, класс Plugin, registerPlugin
+├── types.ts             # интерфейсы (CheckboxState, StateSettings, ...)
+├── states.ts            # ALL_STATES, STATE_MAP, дефолтные настройки
+├── css.ts               # generateCSS — генерация CSS из настроек
+├── settings.ts          # MultistateCheckboxesSettingTab — UI настроек
 ├── manifest.json        # метаданные плагина (Obsidian)
-├── styles.css           # дефолтные стили (основа из _snipet_example.css)
+├── styles.css           # дефолтные стили
 ├── package.json         # зависимости и скрипты
 ├── tsconfig.json        # конфигурация TypeScript
 ├── esbuild.config.mjs   # сборщик esbuild
