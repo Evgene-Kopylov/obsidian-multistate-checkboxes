@@ -46,6 +46,16 @@ interface MultistateCheckboxesSettings {
 
 const ALL_STATES: CheckboxState[] = [
 	{
+		task: " ",
+		name: "Не выполнено",
+		defaultColor: null,
+		iconType: "mask",
+		svg: "",
+		extraCSS: "",
+		noStrikethrough: true,
+		strikethrough: false,
+	},
+	{
 		task: "x",
 		name: "Выполнено",
 		defaultColor: null,
@@ -254,14 +264,14 @@ for (const s of ALL_STATES) {
 }
 
 // Дефолтный порядок цикла (все состояния, кроме x/-)
-const DEFAULT_CYCLE_ORDER = " />!*\"?liIfkudwpcb";
+const DEFAULT_CYCLE_ORDER = " />!*\"?liIfkudwpcb ";
 
 // ─── Дефолтные настройки ─────────────────────────────────────────────────────
 
 function defaultStateSettings(task: string): StateSettings {
 	const state = STATE_MAP[task];
 	return {
-		enabled: task === "x" || task === "-" ? true : false,
+		enabled: task === " " || task === "x" || task === "-" ? true : false,
 		color: state.defaultColor ?? "",
 		customSvg: "",
 	};
@@ -292,7 +302,7 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 
 	// Собираем базовый селектор для всех mask-иконок (кроме x/-)
 	const maskTasks = enabled.filter(
-		(s) => s.iconType === "mask" && s.task !== "-" && s.task !== "x",
+		(s) => s.iconType === "mask" && s.task !== "-" && s.task !== "x" && s.svg,
 	);
 	const bgTasks = enabled.filter(
 		(s) => s.iconType === "background" && s.task !== "x",
@@ -628,7 +638,7 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 
 		const order = this.settings.cycleOrder;
 		const enabledTasks = ALL_STATES.filter(
-			(s) => this.settings.states[s.task]?.enabled && s.task !== "x" && s.task !== "X",
+			(s) => this.settings.states[s.task]?.enabled,
 		).map((s) => s.task);
 
 		// Фильтруем cycleOrder: оставляем только символы из реально существующих и включённых стейтов
