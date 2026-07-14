@@ -1,101 +1,106 @@
 # AGENTS.md
 
-## Обзор
+## Overview
 
-Плагин `obsidian-multistate-checkboxes` — расширенные состояния чекбоксов для Obsidian, не зависящие от темы. SVG-иконки встроены через `data:image/svg+xml`, цвета используют CSS-переменные Obsidian для автоадаптации под любую тему.
+`obsidian-multistate-checkboxes` — extended checkbox states for Obsidian, theme-independent. SVG icons are embedded via `data:image/svg+xml`, colors use Obsidian CSS variables for automatic adaptation to any theme.
 
-## Быстрый старт
+## Quick start
 
 ```sh
-# Клонировать в .obsidian/plugins/obsidian-multistate-checkboxes/
+# Clone into .obsidian/plugins/obsidian-multistate-checkboxes/
 git clone <repo> /path/to/vault/.obsidian/plugins/obsidian-multistate-checkboxes
 
-# Установка зависимостей
+# Install dependencies
 npm install
 
-# Сборка в режиме разработки (watch)
+# Dev build (watch)
 npm run dev
 
-# Production-сборка
+# Production build
 npm run build
 ```
 
-Перезагрузи плагины через `Ctrl+P` → «Reload plugin» или перезапусти Obsidian.
+Reload plugins via **Ctrl+P → Reload plugin** or restart Obsidian.
 
-## Структура проекта
+## Project structure
 
 ```
 obsidian-multistate-checkboxes/
 ├── src/
-│   ├── main.ts           # точка входа, класс Plugin (жизненный цикл)
-│   ├── types.ts          # интерфейсы (CheckboxState, StateSettings, ...)
-│   ├── states.ts         # ALL_STATES, STATE_MAP, дефолтные настройки
-│   ├── css.ts            # generateCSS — генерация CSS из настроек
-│   ├── settings.ts       # SettingTab — UI настроек, drag-and-drop
+│   ├── main.ts           # Plugin entry point, lifecycle management
+│   ├── types.ts          # Interfaces (CheckboxState, StateSettings, ...)
+│   ├── states.ts         # ALL_STATES, STATE_MAP, default settings
+│   ├── css.ts            # generateCSS — CSS generation from settings
+│   ├── settings.ts       # SettingTab — settings UI, drag-and-drop
 │   └── commands/
-│       └── cycle.ts      # команды циклического переключения, хоткеи
-├── manifest.json        # метаданные плагина (Obsidian)
-├── styles.css           # дефолтные стили
-├── package.json         # зависимости и скрипты
-├── tsconfig.json        # конфигурация TypeScript
-├── esbuild.config.mjs   # сборщик esbuild
-├── versions.json        # карта версий Obsidian → minAppVersion
-├── AGENTS.md            # этот файл
-├── README.md            # документация для пользователей
-└── LICENSE              # GPL-3.0
+│       └── cycle.ts      # Cycle commands, hotkeys
+├── manifest.json         # Plugin metadata (Obsidian)
+├── styles.css            # Default styles
+├── package.json          # Dependencies and scripts
+├── tsconfig.json         # TypeScript configuration
+├── esbuild.config.mjs    # esbuild bundler
+├── versions.json         # Obsidian version → minAppVersion map
+├── AGENTS.md             # This file
+├── README.md             # User documentation
+└── LICENSE               # GPL-3.0
 ```
 
-## Технический стек
+## Tech stack
 
-- **TypeScript** — язык разработки
-- **esbuild** — сборка (быстрее webpack/rollup)
-- **Obsidian API** — `Plugin`, `PluginSettingTab`, `Setting`, `MarkdownPostProcessor`
-- **CSS** — через `styles.css` (автозагрузка Obsidian) и динамический `StyleSheet`
+- **TypeScript** — development language
+- **esbuild** — bundler
+- **Obsidian API** — `Plugin`, `PluginSettingTab`, `Setting`, `Editor`, `MarkdownView`
+- **CSS** — via `styles.css` (auto-loaded by Obsidian) and dynamic `<style>` element
 
-## Ключевые концепции Obsidian API
+## Key Obsidian API concepts
 
-### Жизненный цикл плагина
+### Plugin lifecycle
 
 ```ts
 export default class MyPlugin extends Plugin {
   async onload() {
-    // Загрузка: регистрируй команды, события, CSS
+    // Register commands, events, CSS
   }
   onunload() {
-    // Выгрузка: очищай ресурсы
+    // Clean up resources
   }
 }
 ```
 
-### Чекбоксы в Obsidian
+### Checkboxes in Obsidian
 
 - **Reading view**: `<li data-task="x" class="task-list-item is-checked">`
 - **Live Preview**: `<div class="HyperMD-task-line" data-task="x">`
 
-CSS-селекторы должны обрабатывать оба случая.
+CSS selectors must handle both cases.
 
-### Настройки
+### Settings
 
 ```ts
 class SettingTab extends PluginSettingTab {
   display() {
     new Setting(containerEl)
-      .setName("Название")
+      .setName("Setting name")
       .addToggle(toggle => toggle.setValue(true))
   }
 }
 ```
 
-## План реализации
+## Commands & settings
 
-1. Скаффолд — `main.ts`, `manifest.json`, билд-система
-2. Перенос CSS из `_snipet_example.css` в `styles.css`
-3. Settings tab — список стейтов с toggle вкл/выкл
-4. Генерация CSS на лету через `StyleSheet` (условный импорт)
-5. Команда Cycle — циклическое переключение стейта чекбокса
-6. README — документация для пользователей
+- Commands are registered via `this.addCommand(...)` or `plugin.addCommand(...)` in `src/commands/cycle.ts`.
+- Settings tab is in `src/settings.ts`.
+- Settings are persisted using `this.loadData()` / `this.saveData()`.
+- Command IDs: `cycle-checkbox-state` (forward), `cycle-checkbox-state-backward` (backward). Do not rename.
+- Hotkeys: `Alt+Q` (forward), `Alt+Shift+Q` (backward), bound by physical key code (`KeyQ`) for any keyboard layout.
 
-## Conventions
+## File & folder conventions
+
+- Source lives in `src/`. Keep `main.ts` small and focused on plugin lifecycle.
+- Do not commit build artifacts: `node_modules/`, `main.js` are in `.gitignore`.
+- Release artifacts at root: `main.js`, `manifest.json`, `styles.css`.
+
+## Coding conventions
 
 - Code and comments: Russian
 - UI (settings, command names, state names): English
@@ -103,3 +108,40 @@ class SettingTab extends PluginSettingTab {
 - Commit messages: Conventional Commits, Russian, imperative mood
 - CSS variables from Obsidian (`--text-faint`, `--interactive-accent`, etc.) instead of hardcoded colors
 - SVG in CSS: `data:image/svg+xml,...` (URL-encoded)
+
+## Security & compliance
+
+- Fully offline — no network requests.
+- No telemetry, no external services.
+- Reads/writes only inside the vault.
+- All DOM listeners registered via `this.registerDomEvent` or `this.registerEvent` for safe cleanup.
+
+## Testing
+
+Manual install for testing: copy `main.js`, `manifest.json`, `styles.css` to:
+
+```
+<Vault>/.obsidian/plugins/obsidian-multistate-checkboxes/
+```
+
+Reload Obsidian and enable in **Settings → Community plugins**.
+
+## Versioning & releases
+
+- Bump `version` in `manifest.json` (SemVer).
+- Update `versions.json` to map plugin version → minimum Obsidian version.
+- GitHub release tag must match `manifest.json` version exactly (no leading `v`).
+
+## Troubleshooting
+
+- Plugin doesn't load: ensure `main.js`, `manifest.json`, `styles.css` are at the plugin folder root.
+- Build issues: run `npm run build` to recompile.
+- Commands not appearing: verify `addCommand` runs during `onload` and IDs are unique.
+- Settings not persisting: ensure `loadData`/`saveData` are awaited.
+
+## References
+
+- Obsidian sample plugin: https://github.com/obsidianmd/obsidian-sample-plugin
+- API documentation: https://docs.obsidian.md
+- Developer policies: https://docs.obsidian.md/Developer+policies
+- Plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
