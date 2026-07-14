@@ -485,11 +485,10 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 		// Генерируем и применяем CSS
 		this.applyDynamicCSS();
 
-		// Команда циклического переключения
+		// Команда циклического переключения (без хоткея — хоткей регистрируется ниже по физической клавише)
 		this.addCommand({
 			id: "cycle-checkbox-state",
 			name: "Циклически переключить состояние чекбокса",
-			hotkeys: [{ modifiers: ["Alt"], key: "q" }],
 			editorCheckCallback: (
 				checking: boolean,
 				editor: Editor,
@@ -503,6 +502,28 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 					this.cycleCheckbox(editor, line);
 				}
 			},
+		});
+
+		// Хоткей по физической клавише: работает на любой раскладке
+		this.registerDomEvent(document, "keydown", (evt: KeyboardEvent) => {
+			if (
+				evt.code === "KeyQ" &&
+				evt.altKey &&
+				!evt.ctrlKey &&
+				!evt.metaKey &&
+				!evt.shiftKey
+			) {
+				const activeView =
+					this.app.workspace.getActiveViewOfType(MarkdownView);
+				if (!activeView) return;
+				const editor = activeView.editor;
+				const line = this.getCheckboxLine(editor);
+				if (line) {
+					evt.preventDefault();
+					evt.stopPropagation();
+					this.cycleCheckbox(editor, line);
+				}
+			}
 		});
 	}
 
