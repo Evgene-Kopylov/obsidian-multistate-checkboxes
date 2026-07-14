@@ -707,6 +707,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 				text.onChange(async (value) => {
 					this.plugin.settings.cycleOrder = value;
 					await this.plugin.saveSettings();
+					this.renderCyclePreview(previewEl);
 				});
 			})
 			.addExtraButton((btn) => {
@@ -718,6 +719,11 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 						this.display();
 					});
 			});
+
+		const previewEl = containerEl.createEl("div", {
+			cls: "multistate-cycle-preview",
+		});
+		this.renderCyclePreview(previewEl);
 
 		containerEl.createEl("h2", {
 			text: "Состояния",
@@ -789,5 +795,75 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 
 		frag.appendChild(span);
 		return frag;
+	}
+
+	/**
+	 * Рисует визуальный ряд порядка цикла: иконки со стрелками.
+	 */
+	private renderCyclePreview(container: HTMLElement): void {
+		container.empty();
+		container.style.display = "flex";
+		container.style.alignItems = "center";
+		container.style.flexWrap = "wrap";
+		container.style.gap = "0";
+		container.style.marginTop = "8px";
+
+		const order = this.plugin.settings.cycleOrder || DEFAULT_CYCLE_ORDER;
+		const enabled = new Set(
+			ALL_STATES.filter((s) => this.plugin.settings.states[s.task]?.enabled).map((s) => s.task),
+		);
+
+		// Фильтруем порядок: только включённые стейты, без дубликатов
+		const seen = new Set<string>();
+		const items: CheckboxState[] = [];
+		for (const ch of order) {
+			if (enabled.has(ch) && !seen.has(ch)) {
+				seen.add(ch);
+				const state = STATE_MAP[ch];
+				if (state) items.push(state);
+			}
+		}
+
+		// Добавляем включённые стейты, не упомянутые в порядке
+		for (const s of ALL_STATES) {
+			if (enabled.has(s.task) && !seen.has(s.task)) {
+				items.push(s);
+			}
+		}
+
+		if (items.length === 0) {
+			container.createEl("span", {
+				text: "Нет включённых состояний",
+				cls: "setting-item-description",
+			});
+			return;
+		}
+
+		for (let i = 0; i < items.length; i++) {
+			const state = items[i];
+
+			// Иконка
+			const iconEl = container.createEl("span", {
+				cls: "multistate-cycle-icon",
+			});
+			const iconPreview = this.createIconPreview(state);
+			iconEl.appendChild(iconPreview);
+			iconEl.style.display = "inline-flex";
+			iconEl.style.alignItems = "center";
+			iconEl.style.padding = "4px";
+
+			// Текстовая метка
+			iconEl.appendChild(document.createTextNode(`[${state.task}]`));
+
+			// Стрелка (кроме последнего)
+			if (i < items.length - 1) {
+				const arrow = container.createEl("span", {
+					text: "→",
+					cls: "multistate-cycle-arrow",
+				});
+				arrow.style.margin = "0 4px";
+				arrow.style.color = "var(--text-muted)";
+			}
+		}
 	}
 }
