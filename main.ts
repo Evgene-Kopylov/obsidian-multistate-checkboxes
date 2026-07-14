@@ -582,6 +582,8 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 		editor: Editor,
 		info: { line: number; ch: number; currentTask: string },
 	) {
+		const originalCursor = editor.getCursor();
+
 		const order = this.settings.cycleOrder;
 		const enabledTasks = ALL_STATES.filter(
 			(s) => this.settings.states[s.task]?.enabled && s.task !== "x" && s.task !== "X",
@@ -623,7 +625,7 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 			nextTask +
 			line.substring(info.ch + 1);
 		editor.setLine(info.line, newLine);
-		editor.setCursor({ line: info.line, ch: info.ch + 1 });
+		editor.setCursor({ line: originalCursor.line, ch: originalCursor.ch });
 	}
 }
 
