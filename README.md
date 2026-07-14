@@ -1,2 +1,106 @@
-# obsidian-multistate-checkboxes
- A theme-independent Obsidian plugin that extends task checkbox states with custom icons — styled via inline SVGs and CSS variables, works across all themes.
+# Multistate Checkboxes
+
+Расширенные состояния чекбоксов для Obsidian, не зависящие от темы. SVG-иконки встроены через `data:image/svg+xml`, цвета используют CSS-переменные Obsidian для автоадаптации под любую тему.
+
+## Возможности
+
+- **20 состояний чекбоксов** с уникальными SVG-иконками
+- **Не зависит от темы** — все цвета через CSS-переменные Obsidian
+- **Гибкая настройка** — включение/выключение состояний, кастомные цвета и иконки
+- **Циклическое переключение** — команда для смены состояния по кругу
+- Поддержка **Reading view** и **Live Preview**
+
+## Состояния по умолчанию
+
+| Символ | Назначение |
+|--------|-----------|
+| `x`/`X` | Выполнено |
+| `-` | Отменено |
+| `>` | Перенесено |
+| `<` | Запланировано |
+| `?` | Вопрос |
+| `/` | В процессе |
+| `!` | Важно |
+| `*` | Приоритет |
+| `"` | Цитата |
+| `l` | Локация |
+| `i` | Информация |
+| `I` | Идея |
+| `f` | Огонь |
+| `k` | Ключ |
+| `u` | Вверх |
+| `d` | Вниз |
+| `w` | Победа |
+| `p` | Плюс |
+| `c` | Минус |
+| `b` | Закладка |
+
+## Установка
+
+### Вручную
+
+1. Скачай последний релиз из [Releases](https://github.com/USER/obsidian-multistate-checkboxes/releases)
+2. Распакуй в `.obsidian/plugins/obsidian-multistate-checkboxes/`
+3. Перезагрузи Obsidian
+4. Включи плагин в Settings → Community plugins
+
+### Из исходников
+
+```sh
+cd /path/to/vault/.obsidian/plugins/
+git clone https://github.com/USER/obsidian-multistate-checkboxes.git
+cd obsidian-multistate-checkboxes
+npm install
+npm run build
+```
+
+## Использование
+
+### Создание чекбокса с состоянием
+
+В Markdown-задаче используй нужный символ внутри скобок:
+
+```markdown
+- [x] Выполненная задача
+- [-] Отменённая задача
+- [>] Перенесённая задача
+- [!] Важная задача
+- [?] Вопрос
+- [/] В процессе
+```
+
+### Циклическое переключение
+
+1. Установи курсор на строку с чекбоксом
+2. Выполни команду `Multistate Checkboxes: Циклически переключить состояние чекбокса`
+3. Состояние сменится на следующее по порядку
+
+Порядок цикла настраивается в Settings → Multistate Checkboxes.
+
+### Настройка
+
+В Settings → Multistate Checkboxes можно:
+
+- Включить/выключить любое состояние
+- Переопределить цвет иконки (hex, rgb(), CSS-переменная)
+- Заменить SVG-иконку на свою
+- Настроить порядок циклического переключения
+
+## Разработка
+
+```sh
+npm install        # установка зависимостей
+npm run dev        # сборка в режиме watch
+npm run build      # production-сборка
+```
+
+```sh
+# Установить плагин в хранилище
+# Для этого прокинуть текущую папку (со сборкой) в плагины репозитория
+ln -s "$PWD" "/home/death/Documents/TEST VAULT 2/.obsidian/plugins/multistate-checkboxes"
+```
+
+
+## Лицензия
+
+GPL-3.0 — см. [LICENSE](LICENSE)
