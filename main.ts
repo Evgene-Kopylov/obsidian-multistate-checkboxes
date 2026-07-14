@@ -848,7 +848,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 		}
 
 		const self = this;
-		let dragIdx = -1;
 
 		for (let i = 0; i < items.length; i++) {
 			const state = items[i];
@@ -857,6 +856,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 				cls: "multistate-cycle-item",
 			});
 			itemEl.draggable = true;
+			itemEl.dataset.task = state.task;
 			itemEl.style.display = "inline-flex";
 			itemEl.style.alignItems = "center";
 			itemEl.style.padding = "4px 8px";
@@ -865,6 +865,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			itemEl.style.userSelect = "none";
 			itemEl.style.border = "1px solid var(--background-modifier-border)";
 			itemEl.style.background = "var(--background-modifier-form-field)";
+			itemEl.style.transition = "none";
 
 			// Drag handle (точки)
 			const handle = document.createElement("span");
@@ -884,39 +885,54 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 
 			// Drag events
 			itemEl.addEventListener("dragstart", (e) => {
-				dragIdx = i;
-				itemEl.style.opacity = "0.4";
+				(e.target as HTMLElement).style.opacity = "0.4";
 				e.dataTransfer!.effectAllowed = "move";
 			});
-			itemEl.addEventListener("dragend", () => {
-				itemEl.style.opacity = "1";
-				// Убираем подсветку со всех
+			itemEl.addEventListener("dragend", (e) => {
+				(e.target as HTMLElement).style.opacity = "1";
 				container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
-					(el as HTMLElement).style.border = "";
+					(el as HTMLElement).style.border =
+						"1px solid var(--background-modifier-border)";
 				});
 			});
 			itemEl.addEventListener("dragover", (e) => {
 				e.preventDefault();
 				e.dataTransfer!.dropEffect = "move";
+			});
+			itemEl.addEventListener("dragenter", (e) => {
+				e.preventDefault();
 				itemEl.style.border = "1px dashed var(--interactive-accent)";
 			});
 			itemEl.addEventListener("dragleave", () => {
-				itemEl.style.border = "";
+				itemEl.style.border = "1px solid var(--background-modifier-border)";
 			});
 			itemEl.addEventListener("drop", (e) => {
 				e.preventDefault();
-				itemEl.style.border = "";
-				if (dragIdx < 0 || dragIdx === i) return;
+				e.stopPropagation();
+				itemEl.style.border = "1px solid var(--background-modifier-border)";
 
-				// Перемещаем элемент в массиве
-				const moved = items.splice(dragIdx, 1)[0];
-				items.splice(i, 0, moved);
+				const dragged = container.querySelector(
+					".multistate-cycle-item[style*=\"opacity: 0.4\"]",
+				) as HTMLElement | null;
+				if (!dragged || dragged === itemEl) return;
 
-				// Обновляем cycleOrder
-				self.plugin.settings.cycleOrder = items.map((s) => s.task).join("");
+				// Определяем, вставить до или после цели
+				const rect = itemEl.getBoundingClientRect();
+				const midX = rect.left + rect.width / 2;
+				if (e.clientX < midX) {
+					container.insertBefore(dragged, itemEl);
+				} else {
+					container.insertBefore(dragged, itemEl.nextSibling);
+				}
+
+				// Обновляем cycleOrder из DOM-порядка
+				const tasks: string[] = [];
+				container.querySelectorAll(".multistate-cycle-item").forEach((el) => {
+					tasks.push((el as HTMLElement).dataset.task!);
+				});
+				self.plugin.settings.cycleOrder = tasks.join("");
 				self.plugin.saveSettings();
 				self.cycleText.setValue(self.plugin.settings.cycleOrder);
-				self.renderCyclePreview();
 			});
 		}
 	}
