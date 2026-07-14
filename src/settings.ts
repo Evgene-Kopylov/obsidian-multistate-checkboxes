@@ -112,14 +112,17 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             div.style.transition = "none";
             div.style.opacity = enabled ? "1" : "0.5";
 
-            // Drag handle
-            const handle = document.createElement("span");
-            handle.textContent = "⋮⋮";
-            handle.style.marginRight = "8px";
-            handle.style.color = "var(--text-muted)";
-            handle.style.fontSize = "14px";
-            handle.style.cursor = "grab";
-            div.appendChild(handle);
+            		// Drag handle
+            		const handle = document.createElement("span");
+            		handle.textContent = "⋮⋮";
+            		handle.style.marginRight = "8px";
+            		handle.style.color = "var(--text-muted)";
+            		handle.style.fontSize = "14px";
+            		handle.style.cursor = "grab";
+            		handle.style.display = "flex";
+            		handle.style.alignItems = "center";
+            		handle.style.lineHeight = "1";
+            		div.appendChild(handle);
 
             // Icon + label
             const nameFrag = this.createIconPreview(state);
