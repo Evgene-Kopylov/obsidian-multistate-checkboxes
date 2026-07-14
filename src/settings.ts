@@ -132,30 +132,34 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             handle.style.lineHeight = "1";
             div.appendChild(handle);
 
-            // Toggle
-            const toggleWrap = document.createElement("div");
-            toggleWrap.classList.add("checkbox-container");
-            if (enabled) toggleWrap.classList.add("is-enabled");
-            const toggleEl = document.createElement("input");
-            toggleEl.type = "checkbox";
-            toggleEl.tabIndex = -1;
-            toggleEl.checked = enabled;
-            toggleEl.addEventListener("change", async () => {
-                ss.enabled = toggleEl.checked;
-                if (toggleEl.checked) {
-                    toggleWrap.classList.add("is-enabled");
-                } else {
-                    toggleWrap.classList.remove("is-enabled");
-                }
-                await this.plugin.saveSettings();
-                this.plugin.refreshCSS();
-                this.renderStates();
-            });
-            toggleWrap.addEventListener("pointerdown", (e) => {
-                e.stopPropagation();
-            });
-            toggleWrap.appendChild(toggleEl);
-            div.appendChild(toggleWrap);
+            		// Toggle
+            		const toggleWrap = document.createElement("div");
+            		toggleWrap.classList.add("checkbox-container");
+            		if (enabled) toggleWrap.classList.add("is-enabled");
+            		const toggleEl = document.createElement("input");
+            		toggleEl.type = "checkbox";
+            		toggleEl.tabIndex = -1;
+            		toggleEl.checked = enabled;
+            		toggleWrap.appendChild(toggleEl);
+
+            		toggleWrap.addEventListener("click", () => {
+            			toggleEl.checked = !toggleEl.checked;
+            			toggleEl.dispatchEvent(new Event("change"));
+            		});
+
+            		toggleEl.addEventListener("change", async () => {
+            			ss.enabled = toggleEl.checked;
+            			if (toggleEl.checked) {
+            				toggleWrap.classList.add("is-enabled");
+            				div.style.opacity = "1";
+            			} else {
+            				toggleWrap.classList.remove("is-enabled");
+            				div.style.opacity = "0.5";
+            			}
+            			await this.plugin.saveSettings();
+            			this.plugin.refreshCSS();
+            		});
+            		div.appendChild(toggleWrap);
 
             // Drag events
             this.setupStateDragHandlers(div, container);
