@@ -88,9 +88,11 @@ class SettingTab extends PluginSettingTab {
 5. Команда Cycle — циклическое переключение стейта чекбокса
 6. README — документация для пользователей
 
-## Соглашения
+## Conventions
 
-- Весь код и комментарии — на русском
-- Формат коммитов: Conventional Commits, тема на русском, императив
-- CSS-переменные Obsidian (`--text-faint`, `--interactive-accent`, etc.) вместо хардкода цветов
-- SVG в CSS — через `data:image/svg+xml,...` (URL-encoded)
+- Code and comments: Russian
+- UI (settings, command names, state names): English
+- Documentation (README): English
+- Commit messages: Conventional Commits, Russian, imperative mood
+- CSS variables from Obsidian (`--text-faint`, `--interactive-accent`, etc.) instead of hardcoded colors
+- SVG in CSS: `data:image/svg+xml,...` (URL-encoded)

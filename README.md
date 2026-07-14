@@ -1,50 +1,50 @@
 # Multistate Checkboxes
 
-Расширенные состояния чекбоксов для Obsidian, не зависящие от темы. SVG-иконки встроены через `data:image/svg+xml`, цвета используют CSS-переменные Obsidian для автоадаптации под любую тему.
+Extended checkbox states for Obsidian, theme-independent. SVG icons are embedded via `data:image/svg+xml`, colors use Obsidian CSS variables for automatic adaptation to any theme.
 
-## Возможности
+## Features
 
-- **20 состояний чекбоксов** с уникальными SVG-иконками
-- **Не зависит от темы** — все цвета через CSS-переменные Obsidian
-- **Гибкая настройка** — включение/выключение состояний, кастомные цвета и иконки
-- **Циклическое переключение** — команда для смены состояния по кругу
-- Поддержка **Reading view** и **Live Preview**
+- **20 checkbox states** with unique SVG icons
+- **Theme-independent** — all colors via Obsidian CSS variables
+- **Flexible configuration** — enable/disable states, custom colors and icons
+- **Cycling** — command to rotate through states in order
+- Supports **Reading view** and **Live Preview**
 
-## Состояния по умолчанию
+## Default States
 
-| Символ | Назначение |
-|--------|-----------|
-| `x`/`X` | Выполнено |
-| `-` | Отменено |
-| `>` | Перенесено |
-| `<` | Запланировано |
-| `?` | Вопрос |
-| `/` | В процессе |
-| `!` | Важно |
-| `*` | Приоритет |
-| `"` | Цитата |
-| `l` | Локация |
-| `i` | Информация |
-| `I` | Идея |
-| `f` | Огонь |
-| `k` | Ключ |
-| `u` | Вверх |
-| `d` | Вниз |
-| `w` | Победа |
-| `p` | Плюс |
-| `c` | Минус |
-| `b` | Закладка |
+| Symbol | Purpose |
+|--------|---------|
+| `x`/`X` | Done |
+| `-` | Cancelled |
+| `>` | Deferred |
+| `<` | Scheduled |
+| `?` | Question |
+| `/` | In progress |
+| `!` | Important |
+| `*` | Priority |
+| `"` | Quote |
+| `l` | Location |
+| `i` | Info |
+| `I` | Idea |
+| `f` | Fire |
+| `k` | Key |
+| `u` | Up |
+| `d` | Down |
+| `w` | Win |
+| `p` | Pro |
+| `c` | Con |
+| `b` | Bookmark |
 
-## Установка
+## Installation
 
-### Вручную
+### Manual
 
-1. Скачай последний релиз из [Releases](https://github.com/USER/obsidian-multistate-checkboxes/releases)
-2. Распакуй в `.obsidian/plugins/obsidian-multistate-checkboxes/`
-3. Перезагрузи Obsidian
-4. Включи плагин в Settings → Community plugins
+1. Download the latest release from [Releases](https://github.com/USER/obsidian-multistate-checkboxes/releases)
+2. Extract to `.obsidian/plugins/obsidian-multistate-checkboxes/`
+3. Reload Obsidian
+4. Enable the plugin in Settings → Community plugins
 
-### Из исходников
+### From source
 
 ```sh
 cd /path/to/vault/.obsidian/plugins/
@@ -54,53 +54,52 @@ npm install
 npm run build
 ```
 
-## Использование
+## Usage
 
-### Создание чекбокса с состоянием
+### Creating a checkbox with a state
 
-В Markdown-задаче используй нужный символ внутри скобок:
+In a Markdown task, use the corresponding symbol inside the brackets:
 
 ```markdown
-- [x] Выполненная задача
-- [-] Отменённая задача
-- [>] Перенесённая задача
-- [!] Важная задача
-- [?] Вопрос
-- [/] В процессе
+- [x] Completed task
+- [-] Cancelled task
+- [>] Deferred task
+- [!] Important task
+- [?] Question
+- [/] In progress
 ```
 
-### Циклическое переключение
+### Cycling
 
-1. Установи курсор на строку с чекбоксом
-2. Выполни команду `Multistate Checkboxes: Циклически переключить состояние чекбокса`
-3. Состояние сменится на следующее по порядку
+1. Place the cursor on a checkbox line
+2. Run the command `Multistate Checkboxes: Cycle checkbox state`
+3. The state will change to the next one in order
 
-Порядок цикла настраивается в Settings → Multistate Checkboxes.
+The cycle order can be configured in Settings → Multistate Checkboxes.
 
-### Настройка
+### Settings
 
-В Settings → Multistate Checkboxes можно:
+In Settings → Multistate Checkboxes you can:
 
-- Включить/выключить любое состояние
-- Переопределить цвет иконки (hex, rgb(), CSS-переменная)
-- Заменить SVG-иконку на свою
-- Настроить порядок циклического переключения
+- Enable/disable any state
+- Override icon color (hex, rgb(), CSS variable)
+- Replace the SVG icon with your own
+- Configure the cycling order
 
-## Разработка
+## Development
 
 ```sh
-npm install        # установка зависимостей
-npm run dev        # сборка в режиме watch
-npm run build      # production-сборка
+npm install        # install dependencies
+npm run dev        # watch mode build
+npm run build      # production build
 ```
 
 ```sh
-# Установить плагин в хранилище
-# Для этого прокинуть текущую папку (со сборкой) в плагины репозитория
+# Install the plugin in a vault
+# Symlink the current folder (with the build output) into the vault's plugins
 ln -s "$PWD" "/home/death/Documents/TEST VAULT 2/.obsidian/plugins/multistate-checkboxes"
 ```
 
+## License
 
-## Лицензия
-
-GPL-3.0 — см. [LICENSE](LICENSE)
+GPL-3.0 — see [LICENSE](LICENSE)
