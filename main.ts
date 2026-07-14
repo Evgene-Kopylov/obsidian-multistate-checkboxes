@@ -866,18 +866,18 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			itemEl.style.border = "1px solid var(--background-modifier-border)";
 			itemEl.style.background = "var(--background-modifier-form-field)";
 
-			// Иконка
-			const iconPreview = self.createIconPreview(state);
-			itemEl.appendChild(iconPreview);
-
 			// Drag handle (точки)
 			const handle = document.createElement("span");
 			handle.textContent = "⋮⋮";
-			handle.style.margin = "0 4px";
+			handle.style.marginRight = "4px";
 			handle.style.color = "var(--text-muted)";
 			handle.style.fontSize = "14px";
 			handle.style.cursor = "grab";
 			itemEl.appendChild(handle);
+
+			// Иконка
+			const iconPreview = self.createIconPreview(state);
+			itemEl.appendChild(iconPreview);
 
 			// Текстовая метка
 			itemEl.appendChild(document.createTextNode(`[${state.task}]`));
