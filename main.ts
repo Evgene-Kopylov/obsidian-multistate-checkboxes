@@ -793,6 +793,15 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 					this.plugin.settings.cycleOrder = value;
 					await this.plugin.saveSettings();
 				});
+			})
+			.addExtraButton((btn) => {
+				btn.setIcon("reset")
+					.setTooltip("Сбросить порядок по умолчанию")
+					.onClick(async () => {
+						this.plugin.settings.cycleOrder = DEFAULT_CYCLE_ORDER;
+						await this.plugin.saveSettings();
+						this.display();
+					});
 			});
 	}
 }
