@@ -65,7 +65,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
         this.renderStates();
     }
 
-    /** Рендерит стейты в порядке cycleOrder с drag-and-drop. */
     private renderStates(): void {
         const container = this.statesEl;
         container.empty();
@@ -73,7 +72,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
         container.style.flexDirection = "column";
         container.style.gap = "0";
 
-        // Получаем порядок: включённые по cycleOrder, затем выключенные
         const order = this.plugin.settings.cycleOrder || DEFAULT_CYCLE_ORDER;
         const items: CheckboxState[] = [];
         const seen = new Set<string>();
@@ -112,50 +110,52 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             div.style.transition = "none";
             div.style.opacity = enabled ? "1" : "0.5";
 
-            		// Drag handle
-            		const handle = document.createElement("span");
-            		handle.textContent = "⋮⋮";
-            		handle.style.marginRight = "8px";
-            		handle.style.color = "var(--text-muted)";
-            		handle.style.fontSize = "14px";
-            		handle.style.cursor = "grab";
-            		handle.style.display = "flex";
-            		handle.style.alignItems = "center";
-            		handle.style.lineHeight = "1";
-            		div.appendChild(handle);
-
             // Icon + label
             const nameFrag = this.createIconPreview(state);
             nameFrag.appendChild(document.createTextNode(` [${state.task}]`));
-            const labelEl = document.createElement("span");
-            labelEl.style.flexGrow = "1";
-            labelEl.appendChild(nameFrag);
+            		const labelEl = document.createElement("span");
+            		labelEl.appendChild(nameFrag);
             		div.appendChild(labelEl);
 
-            		// Toggle
-            		const toggleWrap = document.createElement("div");
-            		toggleWrap.classList.add("checkbox-container");
-            		if (enabled) toggleWrap.classList.add("is-enabled");
-            		const toggleEl = document.createElement("input");
-            		toggleEl.type = "checkbox";
-            		toggleEl.tabIndex = -1;
-            		toggleEl.checked = enabled;
-            		toggleEl.addEventListener("change", async () => {
-            			ss.enabled = toggleEl.checked;
-            			if (toggleEl.checked) {
-            				toggleWrap.classList.add("is-enabled");
-            			} else {
-            				toggleWrap.classList.remove("is-enabled");
-            			}
-            			await this.plugin.saveSettings();
-            			this.plugin.refreshCSS();
-            			this.renderStates();
-            		});
-            		toggleWrap.addEventListener("pointerdown", (e) => {
-            			e.stopPropagation();
-            		});
-            		toggleWrap.appendChild(toggleEl);
-            		div.appendChild(toggleWrap);
+            		// Drag handle (по центру между лейблом и тогглом)
+            		const handle = document.createElement("span");
+            		handle.textContent = "⋮⋮";
+            		handle.style.flex = "1";
+            		handle.style.display = "flex";
+            		handle.style.justifyContent = "center";
+            		handle.style.paddingRight = "16px";
+            handle.style.color = "var(--text-muted)";
+            handle.style.fontSize = "14px";
+            handle.style.cursor = "grab";
+            handle.style.display = "flex";
+            handle.style.alignItems = "center";
+            handle.style.lineHeight = "1";
+            div.appendChild(handle);
+
+            // Toggle
+            const toggleWrap = document.createElement("div");
+            toggleWrap.classList.add("checkbox-container");
+            if (enabled) toggleWrap.classList.add("is-enabled");
+            const toggleEl = document.createElement("input");
+            toggleEl.type = "checkbox";
+            toggleEl.tabIndex = -1;
+            toggleEl.checked = enabled;
+            toggleEl.addEventListener("change", async () => {
+                ss.enabled = toggleEl.checked;
+                if (toggleEl.checked) {
+                    toggleWrap.classList.add("is-enabled");
+                } else {
+                    toggleWrap.classList.remove("is-enabled");
+                }
+                await this.plugin.saveSettings();
+                this.plugin.refreshCSS();
+                this.renderStates();
+            });
+            toggleWrap.addEventListener("pointerdown", (e) => {
+                e.stopPropagation();
+            });
+            toggleWrap.appendChild(toggleEl);
+            div.appendChild(toggleWrap);
 
             // Drag events
             this.setupStateDragHandlers(div, container);
@@ -208,7 +208,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
                 container.insertBefore(dragged, itemEl.nextSibling);
             }
 
-            // Обновляем cycleOrder из DOM-порядка
             const tasks: string[] = [];
             container.querySelectorAll(".multistate-state-container").forEach((el) => {
                 tasks.push((el as HTMLElement).dataset.task!);
