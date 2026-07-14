@@ -31,8 +31,6 @@ interface CheckboxState {
 /** Пользовательские настройки для одного состояния. */
 interface StateSettings {
 	enabled: boolean;
-	color: string;
-	customSvg: string;
 }
 
 /** Все настройки плагина. */
@@ -269,11 +267,8 @@ const DEFAULT_CYCLE_ORDER = " />!*\"?liIfkudwpcb ";
 // ─── Дефолтные настройки ─────────────────────────────────────────────────────
 
 function defaultStateSettings(task: string): StateSettings {
-	const state = STATE_MAP[task];
 	return {
 		enabled: task === " " || task === "x" || task === "-" ? true : false,
-		color: state.defaultColor ?? "",
-		customSvg: "",
 	};
 }
 
@@ -333,9 +328,8 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 
 	// ── Индивидуальные mask-иконки без extraCSS ──
 	for (const s of maskSimple) {
-		const ss = settings.states[s.task];
-		const color = ss.color || s.defaultColor || "var(--text-faint)";
-		const svg = ss.customSvg || s.svg;
+		const color = s.defaultColor || "var(--text-faint)";
+		const svg = s.svg;
 		const selectors = [
 			`input[data-task="${s.task}"]:checked`,
 			`li[data-task="${s.task}"] > input:checked`,
@@ -349,9 +343,8 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 
 	// ── Индивидуальные mask-иконки с extraCSS ──
 	for (const s of maskExtra) {
-		const ss = settings.states[s.task];
-		const color = ss.color || s.defaultColor || "var(--text-faint)";
-		const svg = ss.customSvg || s.svg;
+		const color = s.defaultColor || "var(--text-faint)";
+		const svg = s.svg;
 		const selectors = [
 			`input[data-task="${s.task}"]:checked`,
 			`li[data-task="${s.task}"] > input:checked`,
@@ -366,9 +359,8 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 
 	// ── Background-иконки ──
 	for (const s of bgTasks) {
-		const ss = settings.states[s.task];
-		const bgColor = ss.color || s.defaultColor || "#e5b567";
-		const svg = ss.customSvg || s.svg;
+		const bgColor = s.defaultColor || "#e5b567";
+		const svg = s.svg;
 		const selectors = [
 			`input[data-task="${s.task}"]:checked`,
 			`li[data-task="${s.task}"] > input:checked`,
@@ -396,11 +388,8 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 			`li[data-task="X"] > input:checked`,
 			`li[data-task="X"] > p > input:checked`,
 		];
-		const xSvg =
-			settings.states["x"]?.customSvg ||
-			STATE_MAP["x"].svg;
-		const xColor =
-			settings.states["x"]?.color || "var(--interactive-accent)";
+		const xSvg = STATE_MAP["x"].svg;
+		const xColor = "var(--interactive-accent)";
 		css += `${xSelectors.join(",\n")} {\n`;
 		css += `\t--checkbox-marker-color: transparent !important;\n`;
 		css += `\tbackground-color: ${xColor} !important;\n`;
@@ -420,11 +409,8 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 			`li[data-task="-"] > input:checked`,
 			`li[data-task="-"] > p > input:checked`,
 		];
-		const minusColor =
-			settings.states["-"]?.color || "var(--text-faint)";
-		const minusSvg =
-			settings.states["-"]?.customSvg ||
-			STATE_MAP["-"].svg;
+		const minusColor = "var(--text-faint)";
+		const minusSvg = STATE_MAP["-"].svg;
 		css += `${minusSelectors.join(",\n")} {\n`;
 		css += `\t--checkbox-marker-color: transparent !important;\n`;
 		css += `\tborder: none !important;\n`;
@@ -721,7 +707,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 
 			// Toggle вкл/выкл
 			const nameFrag = this.createIconPreview(state);
-			nameFrag.appendChild(document.createTextNode(` ${state.name}`));
+			nameFrag.appendChild(document.createTextNode(` [${state.task}]`));
 			new Setting(headerDiv)
 				.setName(nameFrag)
 				.addToggle((toggle) => {
@@ -732,48 +718,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 						this.plugin.refreshCSS();
 					});
 				});
-
-			// Если выключено — скрываем доп. настройки
-			if (!ss.enabled) {
-				continue;
 			}
-
-			// Цвет
-			new Setting(div)
-				.setName("Цвет")
-				.setDesc(
-					"CSS-цвет: hex (#e87d3e), rgb(), var(--text-accent) и т.д.",
-				)
-				.addText((text) => {
-					text.setPlaceholder(
-						state.defaultColor ?? "По умолчанию",
-					);
-					text.setValue(ss.color);
-					text.onChange(async (value) => {
-						ss.color = value;
-						await this.plugin.saveSettings();
-						this.plugin.refreshCSS();
-					});
-				});
-
-			// Кастомный SVG
-			new Setting(div)
-				.setName("SVG-иконка")
-				.setDesc(
-					"Оставьте пустым для иконки по умолчанию. Вставьте сырой SVG-код.",
-				)
-				.addTextArea((textarea) => {
-					textarea.setPlaceholder("SVG по умолчанию");
-					textarea.setValue(ss.customSvg);
-					textarea.inputEl.rows = 3;
-					textarea.inputEl.style.width = "100%";
-					textarea.onChange(async (value) => {
-						ss.customSvg = value;
-						await this.plugin.saveSettings();
-						this.plugin.refreshCSS();
-					});
-				});
-		}
 
 		// ── Порядок цикла ──
 		containerEl.createEl("h2", {
@@ -814,8 +759,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 		const frag = new DocumentFragment();
 		const span = document.createElement("span");
 
-		const ss = this.plugin.settings.states[state.task];
-		const svg = ss?.customSvg || state.svg;
+		const svg = state.svg;
 
 		span.style.display = "inline-block";
 		span.style.width = "18px";
@@ -829,14 +773,14 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			span.style.borderRadius = "4px";
 		} else if (state.iconType === "mask") {
 			span.style.backgroundColor =
-				ss?.color || state.defaultColor || "var(--text-faint)";
+				state.defaultColor || "var(--text-faint)";
 			span.style.webkitMaskImage = `url("${svg}")`;
 			span.style.webkitMaskSize = "contain";
 			span.style.webkitMaskPosition = "center";
 			span.style.webkitMaskRepeat = "no-repeat";
 		} else {
 			span.style.backgroundColor =
-				ss?.color || state.defaultColor || "var(--interactive-accent)";
+				state.defaultColor || "var(--interactive-accent)";
 			span.style.backgroundImage = `url('${svg}')`;
 			span.style.backgroundSize = "contain";
 			span.style.backgroundPosition = "center";
