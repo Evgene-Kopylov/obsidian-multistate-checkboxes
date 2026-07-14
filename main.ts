@@ -504,14 +504,32 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 			},
 		});
 
-		// Хоткей по физической клавише: работает на любой раскладке
+		// Команда обратного переключения
+		this.addCommand({
+			id: "cycle-checkbox-state-backward",
+			name: "Циклически переключить состояние чекбокса назад",
+			editorCheckCallback: (
+				checking: boolean,
+				editor: Editor,
+				view: MarkdownView,
+			) => {
+				if (checking) {
+					return this.getCheckboxLine(editor) !== null;
+				}
+				const line = this.getCheckboxLine(editor);
+				if (line) {
+					this.cycleCheckbox(editor, line, -1);
+				}
+			},
+		});
+
+		// Хоткеи по физической клавише: работают на любой раскладке
 		this.registerDomEvent(document, "keydown", (evt: KeyboardEvent) => {
 			if (
 				evt.code === "KeyQ" &&
 				evt.altKey &&
 				!evt.ctrlKey &&
-				!evt.metaKey &&
-				!evt.shiftKey
+				!evt.metaKey
 			) {
 				const activeView =
 					this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -521,7 +539,8 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 				if (line) {
 					evt.preventDefault();
 					evt.stopPropagation();
-					this.cycleCheckbox(editor, line);
+					const direction: 1 | -1 = evt.shiftKey ? -1 : 1;
+					this.cycleCheckbox(editor, line, direction);
 				}
 			}
 		});
@@ -598,10 +617,12 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 
 	/**
 	 * Циклически переключает состояние чекбокса.
+	 * @param direction 1 — вперёд, -1 — назад.
 	 */
 	private cycleCheckbox(
 		editor: Editor,
 		info: { line: number; ch: number; currentTask: string },
+		direction: 1 | -1 = 1,
 	) {
 		const originalCursor = editor.getCursor();
 
@@ -631,12 +652,12 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 		// Если ничего не включено — выходим
 		if (validOrder.length === 0) return;
 
-		// Находим текущий индекс и переключаем на следующий
+		// Находим текущий индекс и переключаем с учётом направления
 		const currentIdx = validOrder.indexOf(info.currentTask);
 		const nextIdx =
 			currentIdx >= 0
-				? (currentIdx + 1) % validOrder.length
-				: 0;
+				? (currentIdx + direction + validOrder.length) % validOrder.length
+				: (direction === 1 ? 0 : validOrder.length - 1);
 		const nextTask = validOrder[nextIdx];
 
 		// Заменяем символ в строке
