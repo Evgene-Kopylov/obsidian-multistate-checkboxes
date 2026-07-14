@@ -720,8 +720,10 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			});
 
 			// Toggle вкл/выкл
+			const nameFrag = this.createIconPreview(state);
+			nameFrag.appendChild(document.createTextNode(` ${state.name}`));
 			new Setting(headerDiv)
-				.setName(`[${state.task}] ${state.name}`)
+				.setName(nameFrag)
 				.addToggle((toggle) => {
 					toggle.setValue(ss.enabled);
 					toggle.onChange(async (value) => {
@@ -803,5 +805,46 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 						this.display();
 					});
 			});
+	}
+
+	/**
+	 * Создаёт превью иконки состояния (18x18px).
+	 */
+	private createIconPreview(state: CheckboxState): DocumentFragment {
+		const frag = new DocumentFragment();
+		const span = document.createElement("span");
+
+		const ss = this.plugin.settings.states[state.task];
+		const svg = ss?.customSvg || state.svg;
+
+		span.style.display = "inline-block";
+		span.style.width = "18px";
+		span.style.height = "18px";
+		span.style.verticalAlign = "middle";
+		span.style.marginRight = "6px";
+		span.style.flexShrink = "0";
+
+		if (!svg) {
+			span.style.border = "1px solid var(--text-muted)";
+			span.style.borderRadius = "4px";
+		} else if (state.iconType === "mask") {
+			span.style.backgroundColor =
+				ss?.color || state.defaultColor || "var(--text-faint)";
+			span.style.webkitMaskImage = `url("${svg}")`;
+			span.style.webkitMaskSize = "contain";
+			span.style.webkitMaskPosition = "center";
+			span.style.webkitMaskRepeat = "no-repeat";
+		} else {
+			span.style.backgroundColor =
+				ss?.color || state.defaultColor || "var(--interactive-accent)";
+			span.style.backgroundImage = `url('${svg}')`;
+			span.style.backgroundSize = "contain";
+			span.style.backgroundPosition = "center";
+			span.style.backgroundRepeat = "no-repeat";
+			span.style.borderRadius = "4px";
+		}
+
+		frag.appendChild(span);
+		return frag;
 	}
 }
