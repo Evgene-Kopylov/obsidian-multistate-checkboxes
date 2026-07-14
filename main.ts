@@ -311,6 +311,12 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 		`li[data-task="${task}"] > p > input:checked`,
 	];
 
+	// Хелпер: селекторы для зачёркивания текста
+	const strikeSelectors = (task: string): string[] => [
+		`li[data-task="${task}"].task-list-item.is-checked`,
+		`.HyperMD-task-line[data-task="${task}"]`,
+	];
+
 	// ── Базовые свойства для mask-иконок ──
 	if (maskTasks.length > 0) {
 		const selectors = maskTasks.flatMap((s) => taskSelectors(s.task));
@@ -354,12 +360,8 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 	const xEnabled = settings.states["x"]?.enabled;
 	if (xEnabled) {
 		const xSelectors = [
-			`input[data-task="x"]:checked`,
-			`input[data-task="X"]:checked`,
-			`li[data-task="x"] > input:checked`,
-			`li[data-task="x"] > p > input:checked`,
-			`li[data-task="X"] > input:checked`,
-			`li[data-task="X"] > p > input:checked`,
+			...taskSelectors("x"),
+			...taskSelectors("X"),
 		];
 		const xSvg = STATE_MAP["x"].svg;
 		const xColor = "var(--interactive-accent)";
@@ -377,11 +379,7 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 	// ── [-] минус ──
 	const minusEnabled = settings.states["-"]?.enabled;
 	if (minusEnabled) {
-		const minusSelectors = [
-			`input[data-task="-"]:checked`,
-			`li[data-task="-"] > input:checked`,
-			`li[data-task="-"] > p > input:checked`,
-		];
+		const minusSelectors = taskSelectors("-");
 		const minusColor = "var(--text-faint)";
 		const minusSvg = STATE_MAP["-"].svg;
 		css += `${minusSelectors.join(",\n")} {\n`;
@@ -401,13 +399,7 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 	// ── Управление зачёркиванием текста ──
 	const noStrike = enabled.filter((s) => s.noStrikethrough);
 	if (noStrike.length > 0) {
-		const rvSelectors = noStrike.map(
-			(s) => `li[data-task="${s.task}"].task-list-item.is-checked`,
-		);
-		const lpSelectors = noStrike.map(
-			(s) => `.HyperMD-task-line[data-task="${s.task}"]`,
-		);
-		const allSelectors = [...rvSelectors, ...lpSelectors];
+		const allSelectors = noStrike.flatMap((s) => strikeSelectors(s.task));
 		css += `${allSelectors.join(",\n")} {\n`;
 		css += `\tcolor: var(--text-normal);\n`;
 		css += `\ttext-decoration: none !important;\n`;
@@ -417,8 +409,7 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 	// Зачёркивание для [-]
 	const minusState = enabled.find((s) => s.task === "-");
 	if (minusState && minusState.strikethrough) {
-		css += `li[data-task="-"].task-list-item.is-checked,\n`;
-		css += `.HyperMD-task-line[data-task="-"] {\n`;
+		css += `${strikeSelectors("-").join(",\n")} {\n`;
 		css += `\tcolor: var(--text-faint) !important;\n`;
 		css += `\ttext-decoration: line-through !important;\n`;
 		css += `}\n\n`;
@@ -426,10 +417,7 @@ function generateCSS(settings: MultistateCheckboxesSettings): string {
 
 	// Убрать зачёркивание для [x]
 	if (xEnabled) {
-		css += `li[data-task="x"].task-list-item.is-checked,\n`;
-		css += `li[data-task="X"].task-list-item.is-checked,\n`;
-		css += `.HyperMD-task-line[data-task="x"],\n`;
-		css += `.HyperMD-task-line[data-task="X"] {\n`;
+		css += `${[...strikeSelectors("x"), ...strikeSelectors("X")].join(",\n")} {\n`;
 		css += `\ttext-decoration: none !important;\n`;
 		css += `}\n`;
 	}
@@ -819,8 +807,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			return;
 		}
 
-		const self = this;
-
 		for (let i = 0; i < items.length; i++) {
 			const state = items[i];
 
@@ -849,7 +835,7 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 			itemEl.appendChild(handle);
 
 			// Иконка
-			const iconPreview = self.createIconPreview(state);
+			const iconPreview = this.createIconPreview(state);
 			itemEl.appendChild(iconPreview);
 
 			// Текстовая метка
