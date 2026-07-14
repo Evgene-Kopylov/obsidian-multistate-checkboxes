@@ -724,6 +724,11 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
 					});
 			});
 
+		containerEl.createEl("p", {
+			text: "Drag items to reorder.",
+			cls: "setting-item-description",
+		});
+
 		this.previewEl = containerEl.createEl("div", {
 			cls: "multistate-cycle-preview",
 		});
