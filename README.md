@@ -39,7 +39,7 @@ Extended checkbox states for Obsidian, theme-independent. SVG icons are embedded
 
 ### Manual
 
-1. Download the latest release from [Releases](https://github.com/USER/obsidian-multistate-checkboxes/releases)
+1. Download the latest release from [Releases](https://github.com/Evgene-Kopylov/obsidian-multistate-checkboxes/releases)
 2. Extract to `.obsidian/plugins/obsidian-multistate-checkboxes/`
 3. Reload Obsidian
 4. Enable the plugin in Settings → Community plugins
@@ -48,7 +48,7 @@ Extended checkbox states for Obsidian, theme-independent. SVG icons are embedded
 
 ```sh
 cd /path/to/vault/.obsidian/plugins/
-git clone https://github.com/USER/obsidian-multistate-checkboxes.git
+git clone https://github.com/Evgene-Kopylov/obsidian-multistate-checkboxes.git
 cd obsidian-multistate-checkboxes
 npm install
 npm run build
