@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-multistate-checkboxes",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Theme-independent extended checkbox states with custom SVG icons",
 	"main": "main.js",
 	"scripts": {
