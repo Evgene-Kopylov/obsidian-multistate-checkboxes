@@ -4,6 +4,113 @@
 
 `obsidian-multistate-checkboxes` — extended checkbox states for Obsidian, theme-independent. SVG icons are embedded via `data:image/svg+xml`, colors use Obsidian CSS variables for automatic adaptation to any theme.
 
+
+## Процесс работы с задачами
+
+Задачи — `docs/tasks/`, по файлу на задачу. Перед изменениями читать `docs/tasks/index.md`.
+
+Порядок:
+
+1. Взять свободную из `index.md`: `[ ]` → `[>]`
+2. Выполнить (код, тесты)
+3. Коммит → уведомить пользователя
+4. Дождаться принятия коммита
+5. Отметить `[x]`
+6. Взять следующую
+7. Если свободных нет — обновить `index.md` из `docs/tasks/`
+
+## 🚫 Запрещённые файлы (никогда не читать)
+
+- `node_modules/` — npm зависимости, большой объём
+- `main.js` — сгенерированный бандл (очень большой, длинные строки)
+- любые другие сгенерированные файлы
+
+## Общие правила
+
+- Неиспользуемые методы удалять без сожаления.
+- Избегать равноправных вариантов → один способ делать что-либо.
+- Без миграций данных.
+- до версии 1.0.0 обратная совместимость означает отображать ошибку с причиной и вариантом решения, если что-то перестало работать.
+- **Запрет хардкода цветов.** Никаких `#e53935`, `#999` в TS или CSS. Цвета — только через CSS-переменные (`var(--text-faint)`, `var(--background-modifier-border)`) или настройки плагина.
+- **Переиспользование существующего.** Прежде чем создать константу/функцию — проверить, нет ли уже нужного в существующих модулях.
+
+## File editing rules (Zed + DeepSeek)
+
+CRITICAL: When using `edit_file` tool:
+
+- NEVER rewrite entire file. Do targeted SEARCH and REPLACE only.
+- `old_text` must include 3-5 lines of surrounding code to ensure uniqueness.
+- `new_text` identical to `old_text` except the exact change.
+- No markdown code blocks, no extra text inside `new_text`.
+- Multiple unrelated changes → separate `edit_file` calls.
+- **`edits` передавать как JSON-строку, не как массив.** Иначе VecOrJsonString. Формат: `"edits": "[{\"old_text\": \"...\", \"new_text\": \"...\"}]"`
+
+Example:
+
+Task: change `const port = 3000;` to `const port = 8080;`
+
+✅ Correct `old_text`:
+
+```javascript
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+});
+```
+
+✅ Correct `new_text`:
+
+```javascript
+const express = require('express');
+const app = express();
+const port = 8080;
+
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+});
+```
+
+❌ Wrong: replacing whole file content.
+
+Если edit_file или любая файловая операция завершается с ошибкой доступа, блокировки или похожей:
+
+1. Сохранить файл и повторить
+2. Не вышло — жди и пробуй (2с → 4с → 8с). После каждой попытки: «Файл выглядит заблокированным, повторяю через N секунд…»
+3. Не вышло — выведи:
+
+```text
+ОШИБКА: Не удаётся получить доступ к <файл> после нескольких попыток.
+Вероятно он заблокирован другим процессом.
+Я прекращаю работу и жду разрешения ситуации.
+```
+
+### Несохранённые изменения в файлах
+
+Unsaved changes → `save_file` → продолжай. Без спроса.
+
+## 🔥 Строгое отношение к неиспользуемому коду
+
+- Запрещён код «для обратной совместимости».
+- Запрещён код «на всякий случай».
+- Запрещены закомментированные неиспользуемые блоки.
+- Запрещены неиспользуемые переменные, функции, импорты, экспорты, методы класса.
+- Любой невыполняемый код удалить.
+- Перед коммитом проверять мёртвый код (ESLint `no-unused-vars`, TS `noUnusedLocals`/`noUnusedParameters`).
+- Временно не нужная функциональность → удалить (не комментировать). Восстановить из git.
+
+## Запуск shell-команд
+
+- Оболочка `/bin/sh` (не bash).
+- **Heredoc запрещён.** Не использовать `<< 'PYEOF'` и подобное.
+- **Не использовать подстановки** (`$VAR`, `${VAR}`, `$(...)`, backticks, `<(...)`, `>(...)`).
+- Для Python использовать **однострочный вызов**: `python3 -c '...'` (одинарные кавычки, без переносов).
+- Для длинного Python-кода сначала записать скрипт в файл, затем вызвать `python3 script.py`.
+- Избегать символа `!` в командах.
+
+
 ## Quick start
 
 ```sh
