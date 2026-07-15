@@ -1,7 +1,7 @@
 {
 	"id": "multistate-checkboxes",
 	"name": "Multistate Checkboxes",
-	"version": "1.0.0",
+	"version": "0.1.3",
 	"minAppVersion": "1.5.0",
 	"description": "Theme-independent extended checkbox states with custom SVG icons",
 	"author": "death",
