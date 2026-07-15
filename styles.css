@@ -392,7 +392,6 @@ body[data-multistate-disabled~="b"] li[data-task="b"] > p > input:checked {
     align-items: center;
     padding: 4px 8px;
     border-radius: 6px;
-    cursor: grab;
     user-select: none;
     border: 1px solid var(--background-modifier-border);
     background: var(--background-modifier-form-field);
@@ -416,15 +415,20 @@ body[data-multistate-disabled~="b"] li[data-task="b"] > p > input:checked {
     align-items: center;
 }
 
-.multistate-drag-handle {
+.multistate-drag-area {
     flex: 1;
     display: flex;
     justify-content: center;
-    padding-right: 16px;
+    align-items: center;
+}
+
+.multistate-drag-handle {
+    display: flex;
+    align-items: center;
+    padding: 4px 32px;
     color: var(--text-muted);
     font-size: 14px;
     cursor: grab;
-    align-items: center;
     line-height: 1;
 }
 

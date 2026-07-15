@@ -99,7 +99,6 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             if (!enabled) {
                 div.classList.add("multistate-state-disabled");
             }
-            div.draggable = true;
             div.dataset.task = state.task;
 
             // Icon + label
@@ -110,10 +109,14 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             div.appendChild(labelEl);
 
             // Drag handle
+            const handleWrap = doc.createElement("span");
+            handleWrap.className = "multistate-drag-area";
             const handle = doc.createElement("span");
             handle.className = "multistate-drag-handle";
             handle.textContent = "\u22EE\u22EE\u22EE\u22EE";
-            div.appendChild(handle);
+            handle.draggable = true;
+            handleWrap.appendChild(handle);
+            div.appendChild(handleWrap);
 
             // Toggle
             const toggleWrap = doc.createElement("div");
@@ -145,20 +148,21 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             });
             div.appendChild(toggleWrap);
 
-            this.setupStateDragHandlers(div, container);
+            this.setupStateDragHandlers(div, handle, container);
             container.appendChild(div);
         }
     }
 
     private setupStateDragHandlers(
         itemEl: HTMLElement,
+        handle: HTMLElement,
         container: HTMLElement,
     ): void {
-        itemEl.addEventListener("dragstart", (e) => {
+        handle.addEventListener("dragstart", (e) => {
             itemEl.classList.add("multistate-dragging");
             e.dataTransfer!.effectAllowed = "move";
         });
-        itemEl.addEventListener("dragend", () => {
+        handle.addEventListener("dragend", () => {
             itemEl.classList.remove("multistate-dragging");
             container.querySelectorAll(".multistate-state-item").forEach((el) => {
                 el.classList.remove("multistate-drag-over");
