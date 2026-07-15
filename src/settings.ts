@@ -25,13 +25,13 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl("h2", {
-            text: "Multistate Checkboxes",
-        });
+        new Setting(containerEl)
+            .setName("Multistate Checkboxes")
+            .setHeading();
 
-        containerEl.createEl("h2", {
-            text: "Cycle order",
-        });
+        new Setting(containerEl)
+            .setName("Cycle order")
+            .setHeading();
 
         containerEl.createEl("p", {
             text: "Drag items to reorder. Disabled states appear at the bottom.",
@@ -61,16 +61,15 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
                     });
             });
 
-        this.statesEl = containerEl.createEl("div");
+        this.statesEl = containerEl.createEl("div", {
+            cls: "multistate-states-list",
+        });
         this.renderStates();
     }
 
     private renderStates(): void {
         const container = this.statesEl;
         container.empty();
-        container.style.display = "flex";
-        container.style.flexDirection = "column";
-        container.style.gap = "0";
 
         const order = this.plugin.settings.cycleOrder || DEFAULT_CYCLE_ORDER;
         const items: CheckboxState[] = [];
@@ -89,80 +88,65 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             }
         }
 
-        for (let i = 0; i < items.length; i++) {
-            const state = items[i];
+        for (const state of items) {
             const ss = this.plugin.settings.states[state.task];
             const enabled = ss.enabled;
 
-            const div = container.createEl("div", {
-                cls: "multistate-state-container",
-            });
+            const doc = container.ownerDocument;
+
+            const div = doc.createElement("div");
+            div.className = "multistate-state-item";
+            if (!enabled) {
+                div.classList.add("multistate-state-disabled");
+            }
             div.draggable = true;
             div.dataset.task = state.task;
-            div.style.display = "flex";
-            div.style.alignItems = "center";
-            div.style.padding = "4px 8px";
-            div.style.borderRadius = "6px";
-            div.style.cursor = "grab";
-            div.style.userSelect = "none";
-            div.style.border = "1px solid var(--background-modifier-border)";
-            div.style.background = "var(--background-modifier-form-field)";
-            div.style.transition = "none";
-            div.style.opacity = enabled ? "1" : "0.5";
 
             // Icon + label
-            const nameFrag = this.createIconPreview(state);
-            nameFrag.appendChild(document.createTextNode(` [${state.task}]`));
-            		const labelEl = document.createElement("span");
-            		labelEl.appendChild(nameFrag);
-            		div.appendChild(labelEl);
+            const labelEl = doc.createElement("span");
+            labelEl.className = "multistate-state-label";
+            labelEl.appendChild(this.createIconPreview(state, doc));
+            labelEl.appendChild(doc.createTextNode(` [${state.task}]`));
+            div.appendChild(labelEl);
 
-            		// Drag handle (по центру между лейблом и тогглом)
-            		const handle = document.createElement("span");
-		handle.textContent = "⋮⋮⋮⋮";
-            		handle.style.flex = "1";
-            		handle.style.display = "flex";
-            		handle.style.justifyContent = "center";
-            		handle.style.paddingRight = "16px";
-            handle.style.color = "var(--text-muted)";
-            handle.style.fontSize = "14px";
-            handle.style.cursor = "grab";
-            handle.style.display = "flex";
-            handle.style.alignItems = "center";
-            handle.style.lineHeight = "1";
+            // Drag handle
+            const handle = doc.createElement("span");
+            handle.className = "multistate-drag-handle";
+            handle.textContent = "\u22EE\u22EE\u22EE\u22EE";
             div.appendChild(handle);
 
-            		// Toggle
-            		const toggleWrap = document.createElement("div");
-            		toggleWrap.classList.add("checkbox-container");
-            		if (enabled) toggleWrap.classList.add("is-enabled");
-            		const toggleEl = document.createElement("input");
-            		toggleEl.type = "checkbox";
-            		toggleEl.tabIndex = -1;
-            		toggleEl.checked = enabled;
-            		toggleWrap.appendChild(toggleEl);
+            // Toggle
+            const toggleWrap = doc.createElement("div");
+            toggleWrap.classList.add("checkbox-container");
+            if (enabled) toggleWrap.classList.add("is-enabled");
+            const toggleEl = doc.createElement("input");
+            toggleEl.type = "checkbox";
+            toggleEl.tabIndex = -1;
+            toggleEl.checked = enabled;
+            toggleWrap.appendChild(toggleEl);
 
-            		toggleWrap.addEventListener("click", () => {
-            			toggleEl.checked = !toggleEl.checked;
-            			toggleEl.dispatchEvent(new Event("change"));
-            		});
+            toggleWrap.addEventListener("click", () => {
+                toggleEl.checked = !toggleEl.checked;
+                toggleEl.dispatchEvent(new Event("change"));
+            });
 
-            		toggleEl.addEventListener("change", async () => {
-            			ss.enabled = toggleEl.checked;
-            			if (toggleEl.checked) {
-            				toggleWrap.classList.add("is-enabled");
-            				div.style.opacity = "1";
-            			} else {
-            				toggleWrap.classList.remove("is-enabled");
-            				div.style.opacity = "0.5";
-            			}
-            			await this.plugin.saveSettings();
-            			this.plugin.refreshCSS();
-            		});
-            		div.appendChild(toggleWrap);
+            toggleEl.addEventListener("change", () => {
+                ss.enabled = toggleEl.checked;
+                if (toggleEl.checked) {
+                    toggleWrap.classList.add("is-enabled");
+                    div.classList.remove("multistate-state-disabled");
+                } else {
+                    toggleWrap.classList.remove("is-enabled");
+                    div.classList.add("multistate-state-disabled");
+                }
+                void this.plugin.saveSettings().then(() => {
+                    this.plugin.refreshUI();
+                });
+            });
+            div.appendChild(toggleWrap);
 
-            // Drag events
             this.setupStateDragHandlers(div, container);
+            container.appendChild(div);
         }
     }
 
@@ -170,17 +154,14 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
         itemEl: HTMLElement,
         container: HTMLElement,
     ): void {
-        const BORDER = "1px solid var(--background-modifier-border)";
-        const DASHED = "1px dashed var(--interactive-accent)";
-
         itemEl.addEventListener("dragstart", (e) => {
-            (e.target as HTMLElement).style.opacity = "0.4";
+            itemEl.classList.add("multistate-dragging");
             e.dataTransfer!.effectAllowed = "move";
         });
-        itemEl.addEventListener("dragend", (e) => {
-            (e.target as HTMLElement).style.opacity = "1";
-            container.querySelectorAll(".multistate-state-container").forEach((el) => {
-                (el as HTMLElement).style.border = BORDER;
+        itemEl.addEventListener("dragend", () => {
+            itemEl.classList.remove("multistate-dragging");
+            container.querySelectorAll(".multistate-state-item").forEach((el) => {
+                el.classList.remove("multistate-drag-over");
             });
         });
         itemEl.addEventListener("dragover", (e) => {
@@ -189,18 +170,18 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
         });
         itemEl.addEventListener("dragenter", (e) => {
             e.preventDefault();
-            itemEl.style.border = DASHED;
+            itemEl.classList.add("multistate-drag-over");
         });
         itemEl.addEventListener("dragleave", () => {
-            itemEl.style.border = BORDER;
+            itemEl.classList.remove("multistate-drag-over");
         });
         itemEl.addEventListener("drop", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            itemEl.style.border = BORDER;
+            itemEl.classList.remove("multistate-drag-over");
 
             const dragged = container.querySelector(
-                ".multistate-state-container[style*=\"opacity: 0.4\"]",
+                ".multistate-state-item.multistate-dragging",
             ) as HTMLElement | null;
             if (!dragged || dragged === itemEl) return;
 
@@ -213,46 +194,39 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             }
 
             const tasks: string[] = [];
-            container.querySelectorAll(".multistate-state-container").forEach((el) => {
-                tasks.push((el as HTMLElement).dataset.task!);
+            container.querySelectorAll(".multistate-state-item").forEach((el) => {
+                const task = (el as HTMLElement).dataset.task;
+                if (task) tasks.push(task);
             });
             this.plugin.settings.cycleOrder = tasks.join("");
-            this.plugin.saveSettings();
+            void this.plugin.saveSettings();
             this.cycleText.setValue(this.plugin.settings.cycleOrder);
         });
     }
 
-    private createIconPreview(state: CheckboxState): DocumentFragment {
-        const frag = new DocumentFragment();
-        const span = document.createElement("span");
+    private createIconPreview(state: CheckboxState, doc: Document): DocumentFragment {
+        const frag = doc.createDocumentFragment();
+        const span = doc.createElement("span");
+        span.className = "multistate-icon-preview";
 
         const svg = state.svg;
 
-        span.style.display = "inline-block";
-        span.style.width = "18px";
-        span.style.height = "18px";
-        span.style.verticalAlign = "middle";
-        span.style.marginRight = "6px";
-        span.style.flexShrink = "0";
-
         if (!svg) {
-            span.style.border = "1px solid var(--text-muted)";
-            span.style.borderRadius = "4px";
+            span.classList.add("multistate-icon-no-svg");
         } else if (state.iconType === "mask") {
-            span.style.backgroundColor =
-                state.defaultColor || "var(--text-faint)";
-            span.style.webkitMaskImage = `url("${svg}")`;
-            span.style.webkitMaskSize = "contain";
-            span.style.webkitMaskPosition = "center";
-            span.style.webkitMaskRepeat = "no-repeat";
+            span.classList.add("multistate-icon-mask");
+            span.style.setProperty(
+                "--ms-preview-color",
+                state.defaultColor || "var(--text-faint)",
+            );
+            span.style.setProperty("--ms-preview-url", `url("${svg}")`);
         } else {
-            span.style.backgroundColor =
-                state.defaultColor || "var(--interactive-accent)";
-            span.style.backgroundImage = `url('${svg}')`;
-            span.style.backgroundSize = "contain";
-            span.style.backgroundPosition = "center";
-            span.style.backgroundRepeat = "no-repeat";
-            span.style.borderRadius = "4px";
+            span.classList.add("multistate-icon-bg");
+            span.style.setProperty(
+                "--ms-preview-color",
+                state.defaultColor || "var(--interactive-accent)",
+            );
+            span.style.setProperty("--ms-preview-url", `url('${svg}')`);
         }
 
         frag.appendChild(span);

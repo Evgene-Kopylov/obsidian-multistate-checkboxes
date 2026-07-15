@@ -36,7 +36,8 @@ export function registerCycleCommands(plugin: MultistateCheckboxesPlugin): void 
 	});
 
 	// Хоткеи по физической клавише: работают на любой раскладке
-	plugin.registerDomEvent(document, "keydown", (evt: KeyboardEvent) => {
+	const doc = plugin.app.workspace.containerEl.ownerDocument;
+	plugin.registerDomEvent(doc, "keydown", (evt: KeyboardEvent) => {
 		if (
 			evt.code === "KeyQ" &&
 			evt.altKey &&

@@ -6,13 +6,11 @@ import {
 	makeDefaultSettings,
 	DEFAULT_CYCLE_ORDER,
 } from "./states";
-import { generateCSS } from "./css";
 import MultistateCheckboxesSettingTab from "./settings";
 import { registerCycleCommands } from "./commands/cycle";
 
 export default class MultistateCheckboxesPlugin extends Plugin {
 	settings: MultistateCheckboxesSettings;
-	private dynamicStyle: HTMLStyleElement | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -21,29 +19,30 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 			new MultistateCheckboxesSettingTab(this.app, this),
 		);
 
-		this.applyDynamicCSS();
+		this.updateBodyStateClasses();
 		registerCycleCommands(this);
 	}
 
 	onunload() {
-		this.removeDynamicCSS();
+		const doc = this.app.workspace.containerEl.doc;
+		doc.body.removeAttribute("data-multistate-disabled");
 	}
 
 	// ─── Настройки ───────────────────────────────────────────────────────────
 
 	async loadSettings() {
-		const saved = await this.loadData();
-		if (saved && saved.states) {
+		const data = await this.loadData();
+		if (data && data.states) {
 			// Миграция: добавляем отсутствующие состояния
 			for (const s of ALL_STATES) {
-				if (!saved.states[s.task]) {
-					saved.states[s.task] = defaultStateSettings(s.task);
+				if (!data.states[s.task]) {
+					data.states[s.task] = defaultStateSettings(s.task);
 				}
 			}
-			if (!saved.cycleOrder) {
-				saved.cycleOrder = DEFAULT_CYCLE_ORDER;
+			if (!data.cycleOrder) {
+				data.cycleOrder = DEFAULT_CYCLE_ORDER;
 			}
-			this.settings = saved as MultistateCheckboxesSettings;
+			this.settings = data as MultistateCheckboxesSettings;
 		} else {
 			this.settings = makeDefaultSettings();
 		}
@@ -53,25 +52,25 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	// ─── Динамический CSS ────────────────────────────────────────────────────
+	// ─── Управление видимостью состояний ─────────────────────────────────────
 
-	applyDynamicCSS() {
-		this.removeDynamicCSS();
-		const css = generateCSS(this.settings);
-		this.dynamicStyle = document.createElement("style");
-		this.dynamicStyle.id = "multistate-checkboxes-dynamic";
-		this.dynamicStyle.textContent = css;
-		document.head.appendChild(this.dynamicStyle);
-	}
-
-	removeDynamicCSS() {
-		if (this.dynamicStyle) {
-			this.dynamicStyle.remove();
-			this.dynamicStyle = null;
+	/** Обновляет data-атрибут на body: список выключенных состояний. */
+	updateBodyStateClasses() {
+		const doc = this.app.workspace.containerEl.doc;
+		const disabled: string[] = [];
+		for (const s of ALL_STATES) {
+			if (!this.settings.states[s.task]?.enabled) {
+				disabled.push(s.task);
+			}
+		}
+		if (disabled.length > 0) {
+			doc.body.setAttribute("data-multistate-disabled", disabled.join(" "));
+		} else {
+			doc.body.removeAttribute("data-multistate-disabled");
 		}
 	}
 
-	refreshCSS() {
-		this.applyDynamicCSS();
+	refreshUI() {
+		this.updateBodyStateClasses();
 	}
 }

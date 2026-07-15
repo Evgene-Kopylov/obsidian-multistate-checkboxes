@@ -243,4 +243,4 @@ export function makeDefaultSettings(): MultistateCheckboxesSettings {
 	};
 }
 
-export const DEFAULT_SETTINGS = makeDefaultSettings();
+
