@@ -10,7 +10,7 @@ import MultistateCheckboxesSettingTab from "./settings";
 import { registerCycleCommands } from "./commands/cycle";
 
 export default class MultistateCheckboxesPlugin extends Plugin {
-	settings: MultistateCheckboxesSettings;
+	settings!: MultistateCheckboxesSettings;
 
 	async onload() {
 		await this.loadSettings();

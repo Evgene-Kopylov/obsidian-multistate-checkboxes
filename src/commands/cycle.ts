@@ -1,4 +1,4 @@
-import { Editor, MarkdownView } from "obsidian";
+import { Editor, MarkdownView, MarkdownFileInfo } from "obsidian";
 import { ALL_STATES } from "../states";
 import type MultistateCheckboxesPlugin from "../main";
 
@@ -12,11 +12,12 @@ export function registerCycleCommands(plugin: MultistateCheckboxesPlugin): void 
 		editorCheckCallback: (
 			checking: boolean,
 			editor: Editor,
-			view: MarkdownView,
+			ctx: MarkdownView | MarkdownFileInfo,
 		) => {
 			if (checking) return getCheckboxLine(editor) !== null;
 			const line = getCheckboxLine(editor);
 			if (line) cycleCheckbox(plugin, editor, line, 1);
+			return;
 		},
 	});
 
@@ -27,11 +28,12 @@ export function registerCycleCommands(plugin: MultistateCheckboxesPlugin): void 
 		editorCheckCallback: (
 			checking: boolean,
 			editor: Editor,
-			view: MarkdownView,
+			ctx: MarkdownView | MarkdownFileInfo,
 		) => {
 			if (checking) return getCheckboxLine(editor) !== null;
 			const line = getCheckboxLine(editor);
 			if (line) cycleCheckbox(plugin, editor, line, -1);
+			return;
 		},
 	});
 
@@ -69,8 +71,8 @@ function getCheckboxLine(
 	if (!match) return null;
 	return {
 		line: cursor.line,
-		ch: match[1].length,
-		currentTask: match[2],
+		ch: match[1]!.length,
+		currentTask: match[2]!,
 	};
 }
 

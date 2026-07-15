@@ -89,8 +89,8 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
         }
 
         for (const state of items) {
-            const ss = this.plugin.settings.states[state.task];
-            const enabled = ss.enabled;
+    	        const ss = this.plugin.settings.states[state.task]!;
+    	        const enabled = ss.enabled;
 
             const doc = container.ownerDocument;
 
