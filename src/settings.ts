@@ -25,13 +25,13 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        new Setting(containerEl)
-            .setName("Multistate Checkboxes")
-            .setHeading();
+        		new Setting(containerEl)
+        			.setName("States")
+        			.setHeading();
 
-        new Setting(containerEl)
-            .setName("Cycle order")
-            .setHeading();
+        		new Setting(containerEl)
+        			.setName("Cycle order")
+        			.setHeading();
 
         containerEl.createEl("p", {
             text: "Drag items to reorder. Disabled states appear at the bottom.",
@@ -180,9 +180,9 @@ class MultistateCheckboxesSettingTab extends PluginSettingTab {
             e.stopPropagation();
             itemEl.classList.remove("multistate-drag-over");
 
-            const dragged = container.querySelector(
-                ".multistate-state-item.multistate-dragging",
-            ) as HTMLElement | null;
+    	        const dragged = container.querySelector(
+    	            ".multistate-state-item.multistate-dragging",
+    	        );
             if (!dragged || dragged === itemEl) return;
 
             const rect = itemEl.getBoundingClientRect();

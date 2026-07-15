@@ -31,8 +31,8 @@ export default class MultistateCheckboxesPlugin extends Plugin {
 	// ─── Настройки ───────────────────────────────────────────────────────────
 
 	async loadSettings() {
-		const data = await this.loadData();
-		if (data && data.states) {
+		const data = await this.loadData() as Partial<MultistateCheckboxesSettings> | null;
+		if (data?.states) {
 			// Миграция: добавляем отсутствующие состояния
 			for (const s of ALL_STATES) {
 				if (!data.states[s.task]) {
