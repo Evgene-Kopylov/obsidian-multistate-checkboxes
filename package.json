@@ -1,14 +1,14 @@
 {
 	"name": "obsidian-multistate-checkboxes",
-	"version": "1.0.1",
+	"version": "1.0.3",
 	"description": "Theme-independent extended checkbox states with custom SVG icons",
 	"main": "main.js",
+	"type": "module",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"lint": "eslint src/",
-		"typecheck": "tsc -noEmit -skipLibCheck",
-		"test": "npm run typecheck && npm run lint"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"lint": "eslint ."
 	},
 	"keywords": [],
 	"author": "death",
